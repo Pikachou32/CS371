@@ -32,6 +32,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
     # Display objects
     screen = pygame.display.set_mode((screenWidth, screenHeight))
+    winMessage = pygame.Rect(0,0,0,0)
     topWall = pygame.Rect(-10,0,screenWidth+20, 10)
     bottomWall = pygame.Rect(-10, screenHeight-10, screenWidth+20, 10)
     centerLine = []
@@ -80,9 +81,18 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
         # =========================================================================================
         # Your code here to send an update to the server on your paddle's information,
-
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
+
+
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # Creating the client
+
+        client.connect(("localhost", 12321))                            # Connecting to server
+
+
+
+
+
         
         
         # =========================================================================================
@@ -102,7 +112,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             textSurface = winFont.render(winText, False, WHITE, (0,0,0))
             textRect = textSurface.get_rect()
             textRect.center = ((screenWidth/2), screenHeight/2)
-            screen.blit(textSurface, textRect)
+            winMessage = screen.blit(textSurface, textRect)
         else:
 
             # ==== Ball Logic =====================================================================
@@ -144,8 +154,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
         pygame.draw.rect(screen, WHITE, topWall)
         pygame.draw.rect(screen, WHITE, bottomWall)
-        updateScore(lScore, rScore, screen, WHITE, scoreFont)
-        pygame.display.flip()
+        scoreRect = updateScore(lScore, rScore, screen, WHITE, scoreFont)
+        pygame.display.update([topWall, bottomWall, ball, leftPaddle, rightPaddle, scoreRect, winMessage])
         clock.tick(60)
         
         # This number should be synchronized between you and your opponent.  If your number is larger
