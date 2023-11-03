@@ -6,8 +6,51 @@
 # Misc:                     <Not Required.  Anything else you might want to include>
 # =================================================================================================
 
+#Librarys needed 
 import socket
-import threading
+import threading      
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # Creating the server
+
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Working on localhost need this
+
+server.bind(("localhost", 12321))                               # Binds the sockets to host and port 
+server.listen(5)                                                # listen to request of server from closer
+
+
+clients = []                                                    # List to store clients
+
+while len(clients) < 2:                                         # Making sure we have 2 clients connected
+    print("Waiting for Player 1 to connect . . .")
+    clientSocket, clientAddress = server.accept()
+    print(f"Connecion from Player 1 {clientAddress}")           # verifies connection
+    clients.append(clientSocket)                                # Store clients into list
+    print("Waiting for Player 2 to connect . . .")
+    clientSocket, clientAddress = server.accept()
+    print(f"Connecion from Player 2 {clientAddress}")
+    clients.append(clientSocket)
+
+breakpoint                          
+
+
+
+    
+
+message = clientSocket.recv(1024)               # Expect "Hello Server"
+
+
+
+
+print(f"Client sent: {message.decode()}")
+
+clientSocket.send("Hello client.".encode())
+
+clientSocket.close()
+server.close()
+
+
+
+
 
 # Use this file to write your server logic
 # You will need to support at least two clients
