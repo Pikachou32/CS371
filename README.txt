@@ -3,8 +3,9 @@ Contact Info
 
 Group Members & Email Addresses:
 
-    Person 1, person1@uky.edu
+    Person 1, vhav222@uky.edu
     Person 2, person2@uky.edu
+    Person 3, person2@uky.edu
 
 Versioning
 ==========
