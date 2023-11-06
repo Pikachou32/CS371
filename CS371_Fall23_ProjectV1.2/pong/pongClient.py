@@ -11,7 +11,8 @@ import tkinter as tk
 import sys
 import socket
 
-from assets.code.helperCode import *
+from assets.code.helperCode import Paddle, updateScore, Ball
+
 
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
