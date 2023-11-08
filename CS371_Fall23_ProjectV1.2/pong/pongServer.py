@@ -31,10 +31,14 @@ def handle_client(clientSocket, clientAddress):
     clients.remove(clientSocket)
     
 while len(clients) < 2:
-    print("Waiting for clients to connect...")
-    clientSocket, clientAddress = server.accept()
-    print(f"Connection from {clientAddress}")
+    print("Waiting for Player 1 to connect ...")
+    (clientSocket, clientAddress) = server.accept()
+    print(f"Connection from Player 1 {clientAddress}")
     clients.append(clientSocket)
+    print("Waiting for Player 2 to connect ...")
+    (clientSocket, clientAddress) = server.accept()
+    print(f"Connection from Player 2 {clientAddress}")
+    client_thread = threading.Thread(target=handle_client, args=(clientSocket, clientAddress))
     client_thread = threading.Thread(target=handle_client, args=(clientSocket, clientAddress))
     client_thread.start()
 
