@@ -12,25 +12,24 @@ import threading                                               # Library for thr
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # Creating the server
-
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Working on localhost need this
-
 server.bind(("localhost", 12321))                               # Binds the sockets to host and port 
 server.listen(5)                                                # listen to request of server from closer
 
 
 clients = []                                                    # List to store clients
 
+
 def handle_client(clientSocket, clientAddress):
     while True:
-        data = clientSocket.recv(1024)
-        if not data:
+        resp = clientSocket.recv(1024)
+        if not resp:
             break
-        print(f"Received from {clientAddress}: {data.decode('utf-8')}")
-        clientSocket.send(data)  # Echo the  back to the client
+        print(f"Received from {clientAddress}: {resp.decode('utf-8')}")
+        clientSocket.send(resp)  # Echo the  back to the client
     clientSocket.close()
     clients.remove(clientSocket)
-
+    
 while len(clients) < 2:
     print("Waiting for clients to connect...")
     clientSocket, clientAddress = server.accept()
@@ -38,6 +37,7 @@ while len(clients) < 2:
     clients.append(clientSocket)
     client_thread = threading.Thread(target=handle_client, args=(clientSocket, clientAddress))
     client_thread.start()
+
 
 #while len(clients) < 2:                                         # Making sure we have 2 clients connected
  #   print("Waiting for Player 1 to connect . . .")

@@ -235,3 +235,4 @@ if __name__ == "__main__":
     # the startScreen() function should call playGame with the arguments given to it by the server this is
     # here for demo purposes only
     # playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+    
