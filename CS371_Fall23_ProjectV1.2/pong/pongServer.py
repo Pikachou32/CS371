@@ -12,7 +12,7 @@ import threading                                               # Library for thr
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # Creating the server
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Working on localhost need this
+server.setsocko:pt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Working on localhost need this
 server.bind(("localhost", 12321))                               # Binds the sockets to host and port 
 server.listen(5)                                                # listen to request of server from closer
 
