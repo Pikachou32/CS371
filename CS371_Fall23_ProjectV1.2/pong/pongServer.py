@@ -10,72 +10,74 @@
 import socket                                                  # Library needed for sockets
 import threading                                               # Library for threading
 
-
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # Creating the server
-server.setsocko:pt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Working on localhost need this
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Working on localhost need this
 server.bind(("localhost", 12321))                               # Binds the sockets to host and port 
-server.listen(5)                                                # listen to request of server from closer
+server.listen(2)                                                # listen to request of server from closer
 
 
-clients = []                                                    # List to store clients
+class Network:                                                  # where we can connect to server and manage data around
+    def __init__(self):
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Working on localhost need this
+        self.server = "localhost"
+        self.port = 12321
+        self.address = (self.server, self.port)
+        self.position = self.connect()
 
-
-def handle_client(clientSocket, clientAddress):
-    while True:
-        resp = clientSocket.recv(1024)
-        if not resp:
-            break
-        print(f"Received from {clientAddress}: {resp.decode('utf-8')}")
-        clientSocket.send(resp)  # Echo the  back to the client
-    clientSocket.close()
-    clients.remove(clientSocket)
+    def getposition(self):                                      # to get posititon
+        return self.position
     
-while len(clients) < 2:                                         # Making sure we wati for two clients connected 
-    print("Waiting for Player 1 to connect ...")
-    (clientSocket, clientAddress) = server.accept()
-    print(f"Connection from Player 1 {clientAddress}")
-    clients.append(clientSocket)                                # Appends to list                          
-
-    print("Waiting for Player 2 to connect ...")
-    (clientSocket, clientAddress) = server.accept()
-    print(f"Connection from Player 2 {clientAddress}")
-    clients.append(clientSocket)
-
-    client_thread1 = threading.Thread(target=handle_client, args=(clients[0], clientAddress))
-    client_thread2 = threading.Thread(target=handle_client, args=(clients[1], clientAddress))
-    client_thread1.start()
-    client_thread2.start()
+    def connect(self):                                          # 
+        try: 
+            self.client.connect(self)
+            return self.client.recv(1024).decode()
+        except:
+            pass
+    def send(self,data):
+        try:
+            self.client.send(str.encode(data))
+            return self.cleint.recv(1024).decode()
+        except socket.error as e:
+            print(e)
+            
 
 
 
-#while len(clients) < 2:                                         # Making sure we have 2 clients connected
- #   print("Waiting for Player 1 to connect . . .")
-  #  clientSocket, clientAddress = server.accept()               # accept conection
-  #  print(f"Connecion from Player 1 {clientAddress1}")           # verifies connection
-  #  clients.append(clientSocket)                                # Store clients into list
-  #  client_thread1 = threading.Thread(target=handle_client, args=(clientSocket1, clientAddress1))
-  #  client_thread1.start()
+def threading_client(clientSocket, player):                     # threading funnction to communicate with client
+    msg = ''
+    while True:
+        try:
+            data = clientSocket.recv(1024)                      # Infromation trying to receive 
+            msg = data.decode('utf-8')                          # We need to decode infromation from utf-8 format
 
-  #  print("Waiting for Player 2 to connect . . .")
-  #  clientSocket, clientAddress = server.accept()
-  #  print(f"Connecion from Player 2 {clientAddress2}")
-  #  clients.append(clientSocket)
-  #  client_thread2 = threading.Thread(target=handle_client, args=(clientSocket2, clientAddress2))
-   # client_thread2.start()
-
-
-message = clientSocket.recv(1024)               # Expect "Hello Server"
-
-
+            if not data:                                        # if information from client is not working, we disconect
+                print(f"Disconnected from player {player}")                           
+                break
+            else:                                                
+                print(f"Received from player {player}: {msg}")
+                clientSocket.send(data)                         # echo data  if data was received from client 
+        except:                                                 # breaks if running to errors to avouid infiinte loop
+            break
+    print("Connection closed")
+    clientSocket.close()
 
 
-print(f"Client sent: {message.decode()}")
 
-clientSocket.send("Hello client.".encode())
+def main():                                                     # main function for the server 
 
-clientSocket.close()
-server.close()
+    player = 0                                                  # creating player varaible 
+    while True:                                         
+        print("Waiting for connection ...")
+        (clientSocket, clientAddress) = server.accept()
+        print(f"Connection from {clientAddress}")
+        client_thread = threading.Thread(target= threading_client, args= (clientSocket,player))
+        player += 1
+        client_thread.start()
 
+if __name__ == "__main__":
+    main()
+    
 # Use this file to write your server logic
 # You will need to support at least two clients
 # You will need to keep track of where on the screen (x,y coordinates) each paddle is, the score 
