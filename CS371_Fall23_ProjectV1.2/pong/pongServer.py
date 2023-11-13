@@ -6,53 +6,52 @@
 # Misc:                     <Not Required.  Anything else you might want to include>
 # =================================================================================================
 
+import socket
+import threading
 
-import socket                                                  # Library needed for sockets
-import threading                                               # Library for threading
+#define these ahead of time?
+SCREEN_WIDTH = 1920
+SCREEN_HEIGHT = 1080
 
-def threading_client(clientSocket, clientAddress):
-    print(f"Connected to {clientAddress}")
-
-    while True:
-        try:
-            data = clientSocket.recv(1024)
-            if not data:
-                break                                         # Exit  loop if no data is received from client
-
-            decoded_data = data.decode('utf-8')
-            print(f"Received from {clientAddress}: {decoded_data}")
-            clientSocket.sendall(data)
-        except Exception as e:
-            print(f"Error: {e}")
-            break   
-            
-
-
-
-
-
-
-def main():                                                     # main function for the server 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      # Creating the server
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)    # Working on localhost need this
-    server.bind(("localhost", 12321))                               # Binds the sockets to host and port 
-    server.listen(2)                                                # listen to request of server from closer
-
-
-    while True:                                         
-        print("Waiting for connection ...")
-        (clientSocket, clientAddress) = server.accept()
-        print(f"Connection from {clientAddress}")
-        client_thread = threading.Thread(target= threading_client, args= (clientSocket,clientAddress))
-        client_thread.start()
-
-
-if __name__ == "__main__":
-    main()
-    
 # Use this file to write your server logic
 # You will need to support at least two clients
 # You will need to keep track of where on the screen (x,y coordinates) each paddle is, the score 
 # for each player and where the ball is, and relay that to each client
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
+
+# function to communicate with a given client
+def func(clientSocket, clientAddress) #XXX: CHANGE FUNCTION NAME
+    while (true)
+
+
+
+if __name__ == "__main__":
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #create server
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("localhost", 12321))
+    server.listen(5) #listen for 5 concurrent connection attempts
+
+    #accept two connections
+    clientOneSocket, clientOneAddress = server.accept()
+    clientTwoSocket, clientTwoAddress = server.accept()
+
+    #assign sides, determine screen size
+    msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
+    clientOneSocket.send(msg)
+
+    msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
+    clientTwoSocket.send(msg)
+
+    #create threads
+    thread1 = threading.Thread(target=func, args=(clientOneSocket, clientOneAddress,))
+    thread2 = threading.Thread(target=func, args=(clientTwoSocket, clientTwoAddress,))
+
+    thread1.start()
+    thread2.start()
+    
+    thread1.join()
+    thread2.join()
+
+    #print exit message or something
+    #basically do whatever needs to be done after the game is over
