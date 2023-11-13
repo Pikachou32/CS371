@@ -13,6 +13,10 @@ import socket
 
 from assets.code.helperCode import *
 
+# MY METHODS START HERE
+
+# MY METHODS END HERE
+
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
 # to suit your needs.
@@ -85,10 +89,11 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Feel free to change when the score is updated to suit your needs/requirements
         ack = False
         message = (playerPaddleObj, ball, lScore, rScore, sync)
+        #repeatedly send message and wait for acknowledgement
         while not (ack):
             client.send(message)
             resp = client.recv(1024)
-            if (resp = "Ack"):
+            if (resp == "Ack"):
                 ack = True
         # =========================================================================================
 

@@ -12,6 +12,7 @@ import threading
 #define these ahead of time?
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
+messages = [0, 0]
 
 # Use this file to write your server logic
 # You will need to support at least two clients
@@ -20,11 +21,21 @@ SCREEN_HEIGHT = 1080
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
 
-# function to communicate with a given client
-def func(clientSocket, clientAddress) #XXX: CHANGE FUNCTION NAME
-    while (true)
+# receive data from the given client
+def receiveData(clientSocket, clientNum): 
+    messages[clientNum-1] = clientSocket.recv(1024) #clientNum-1 because arrays are 0-indexed
+    msg = "Ack"
+    clientSocket.send(msg)
 
-
+#send data to the given client
+def sendData(clientSocket, data):
+    ack = False
+    #repeatedly send message and wait for acknowledgement
+    while not (ack):
+        clientSocket.send(data)
+        resp = clientSocket.recv(1024)
+        if (resp == "Ack"):
+            ack = True
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #create server
@@ -43,15 +54,28 @@ if __name__ == "__main__":
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
     clientTwoSocket.send(msg)
 
-    #create threads
-    thread1 = threading.Thread(target=func, args=(clientOneSocket, clientOneAddress,))
-    thread2 = threading.Thread(target=func, args=(clientTwoSocket, clientTwoAddress,))
-
-    thread1.start()
-    thread2.start()
     
-    thread1.join()
-    thread2.join()
+    while (True): #repeat until connection is broken
+        #receive data first
+        thread1 = threading.Thread(target=receiveData, args=(clientOneSocket, 1,))
+        thread2 = threading.Thread(target=receiveData, args=(clientTwoSocket, 2,))
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
 
-    #print exit message or something
-    #basically do whatever needs to be done after the game is over
+        #then send data
+        thread1 = threading.Thread(target=sendData, args=(clientOneSocket, messages[1],))
+        thread2 = threading.Thread(target=sendData, args=(clientTwoSocket, messages[0],))
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
+
+        #check if the game is over
+        #if so, end connections and break out of the loop
+        if (messages[0][2] > 4 | messages[0][3] > 4):
+            clientOneSocket.close()
+            clientTwoSocket.close()
+            server.close()
+            break
