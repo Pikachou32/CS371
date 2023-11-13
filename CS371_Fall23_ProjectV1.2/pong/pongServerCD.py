@@ -20,9 +20,42 @@ SCREEN_HEIGHT = 1080
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
 
+# function to determine which client sent information
+def getClientInfo(clientSocket, clientAddress):
+
+
 # function to communicate with a given client
-def func(clientSocket, clientAddress) #XXX: CHANGE FUNCTION NAME
-    while (true)
+def comReceivingProtocol(clientSocket):
+    while (True):
+
+        #Pull the information from the first client
+        clientMessage = clientSocket.recv(1024)
+        clientMessage.decode()
+        
+        #Pass this information to the second client
+        updateForClient = clientMessage
+        comSendingProtocol(updateForClient)
+
+        server.send(updateForClient, clientSocket)
+
+        #Handle the acknowledgement from the second client
+        clientTwoResponse = clientTwoSocket.recv(1024)
+        clientTwoResponse.decode()
+        clientTwoACK = clientTwoResponse[5]
+        if (clientTwoACK != 1):
+            server.send(updateForClientTwo, clientTwoSocket)
+        else:
+            server.send(clientTwoResponse, clientOneSocket)
+
+def comSendingProtocol(message):
+    updateForClient = message
+    server.send(updateForClient)
+
+
+        
+
+
+
 
 
 
@@ -44,14 +77,15 @@ if __name__ == "__main__":
     clientTwoSocket.send(msg)
 
     #create threads
-    thread1 = threading.Thread(target=func, args=(clientOneSocket, clientOneAddress,))
-    thread2 = threading.Thread(target=func, args=(clientTwoSocket, clientTwoAddress,))
+    thread1 = threading.Thread(target=comProtocol, args=(clientOneSocket, clientOneAddress,))
+    thread2 = threading.Thread(target=comProtocol, args=(clientTwoSocket, clientTwoAddress,))
 
     thread1.start()
     thread2.start()
+
     
     thread1.join()
     thread2.join()
 
     #print exit message or something
-    #basically do whatever needs to be done after the game is over
+    #basically do whatever needs to be done after the game is o
