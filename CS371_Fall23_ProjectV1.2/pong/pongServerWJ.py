@@ -41,11 +41,13 @@ if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #create server
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("localhost", 12321))
+    print("Awaiting connection...")
     server.listen(5) #listen for 5 concurrent connection attempts
 
     #accept two connections
     clientOneSocket, clientOneAddress = server.accept()
     clientTwoSocket, clientTwoAddress = server.accept()
+    print("Both clients have connected, running initial setup")
 
     #assign sides, determine screen size
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
@@ -54,7 +56,7 @@ if __name__ == "__main__":
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
     clientTwoSocket.send(msg)
 
-    
+    print("Initial setup complete, starting game loop")
     while (True): #repeat until connection is broken
         #receive data first
         thread1 = threading.Thread(target=receiveData, args=(clientOneSocket, 1,))
