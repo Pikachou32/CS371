@@ -10,14 +10,6 @@ import socket
 import threading
 import pickle 
 
-#define these ahead of time?
-SCREEN_WIDTH = 1920
-SCREEN_HEIGHT = 1080
-messages = [0, 0]
-
-
-
-
 # Use this file to write your server logic
 # You will need to support at least two clients
 # You will need to keep track of where on the screen (x,y coordinates) each paddle is, the score 
@@ -25,22 +17,19 @@ messages = [0, 0]
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
 
+#global variables
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
+messages = [0, 0]
+
 # receive data from the given client
 def receiveData(clientSocket, clientNum): 
     messages[clientNum-1] = pickle.loads(clientSocket.recv(1024)) #clientNum-1 because arrays are 0-indexed
-    msg = "Ack"
-    clientSocket.send(msg)
-    clientSocket.close()
 
 #send data to the given client
 def sendData(clientSocket, data):
-    ack = False
-    #repeatedly send message and wait for acknowledgement
-    while not (ack):
-        clientSocket.send(data)
-        resp = clientSocket.recv(1024)
-        if (resp == "Ack"):
-            ack = True
+    data_bytes = pickle.dumps(data)
+    clientSocket.send(data_bytes)
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #create server

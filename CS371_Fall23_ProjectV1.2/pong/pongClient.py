@@ -88,16 +88,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
-        ack = False
         message = (playerPaddleObj, ball, lScore, rScore, sync)
         msg_bytes = pickle.dumps(message)
-        
-        #repeatedly send message and wait for acknowledgement
-        while not (ack):
-            client.send(msg_bytes)
-            resp = client.recv(1024)
-            if (resp == "Ack"):
-                ack = True
+        client.send(msg_bytes)
 
         # =========================================================================================
 
@@ -170,14 +163,12 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
         resp = client.recv(1024)
-        resp_turple = pickle.loads(resp)
-        message = "Ack"
-        client.send(message)
-        opponentPaddleObj = resp_turple[0]
-        if (sync < resp_turple[4]): # if client is out of sync
-            ball = resp_turple[1]
-            lScore = resp_turple[2]
-            rScore = resp_turple[3]
+        resp_tuple = pickle.loads(resp)
+        opponentPaddleObj = resp_tuple[0]
+        if (sync < resp_tuple[4]): # if client is out of sync
+            ball = resp_tuple[1]
+            lScore = resp_tuple[2]
+            rScore = resp_tuple[3]
         # =========================================================================================
 
 
