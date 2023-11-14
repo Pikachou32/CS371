@@ -47,7 +47,7 @@ def sendData(clientSocket, data):
         print(f"Error sending data to client: {e}")
 
 
-def handle_client(client_socket, client_num):
+def player_handle(client_socket, client_num):
     try:
         # Your code to send initial information to the client (e.g., screen size and side)
         initial_info = (SCREEN_WIDTH, SCREEN_HEIGHT, "left" if client_num == 1 else "right")
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     try:
         while (True): #repeat until connection is broken
         #receive data first
-            thread1 = threading.Thread(target=handle_client, args=(ClientOneSocket, 1,))
-            thread2 = threading.Thread(target=handle_client, args=(ClientTwoSocket, 2,))
+            thread1 = threading.Thread(target=player_handle, args=(ClientOneSocket, 1,))
+            thread2 = threading.Thread(target=player_handle, args=(ClientTwoSocket, 2,))
             thread1.start()
             thread2.start()
             thread1.join()
