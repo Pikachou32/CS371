@@ -8,11 +8,7 @@
 
 import socket
 import threading
-
-#define these ahead of time?
-SCREEN_WIDTH = 1920
-SCREEN_HEIGHT = 1080
-messages = [0, 0]
+import pickle 
 
 # Use this file to write your server logic
 # You will need to support at least two clients
@@ -21,43 +17,51 @@ messages = [0, 0]
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
 
+#global variables
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
+messages = [0, 0]
+
 # receive data from the given client
 def receiveData(clientSocket, clientNum): 
-    messages[clientNum-1] = clientSocket.recv(1024) #clientNum-1 because arrays are 0-indexed
-    msg = "Ack"
-    clientSocket.send(msg)
+    messages[clientNum-1] = pickle.loads(clientSocket.recv(1024)) #clientNum-1 because arrays are 0-indexed
 
 #send data to the given client
 def sendData(clientSocket, data):
-    ack = False
-    #repeatedly send message and wait for acknowledgement
-    while not (ack):
-        clientSocket.send(data)
-        resp = clientSocket.recv(1024)
-        if (resp == "Ack"):
-            ack = True
+    data_bytes = pickle.dumps(data)
+    clientSocket.send(data_bytes)
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #create server
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("localhost", 12321))
-    print("Awaiting connection...")
     server.listen(5) #listen for 5 concurrent connection attempts
 
     #accept two connections
+    print("Waiting for connection . . .")
     clientOneSocket, clientOneAddress = server.accept()
+    print(f"received connection from {clientOneAddress}")
+
+    print("Waiting for connection . . .")
     clientTwoSocket, clientTwoAddress = server.accept()
-    print("Both clients have connected, running initial setup")
+    print(f"received connection from {clientTwoAddress}")
 
     #assign sides, determine screen size
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
-    clientOneSocket.send(msg)
+    msg_bytes = pickle.dumps(msg)
+    clientOneSocket.send(msg_bytes)
 
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
-    clientTwoSocket.send(msg)
+    msg_bytes = pickle.dumps(msg)
+    clientTwoSocket.send(msg_bytes)
 
-    print("Initial setup complete, starting game loop")
+    spectatorSockets = []
+    
     while (True): #repeat until connection is broken
+        #listen for spectator connections
+        server.listen(5)
+        
+
         #receive data first
         thread1 = threading.Thread(target=receiveData, args=(clientOneSocket, 1,))
         thread2 = threading.Thread(target=receiveData, args=(clientTwoSocket, 2,))
@@ -76,7 +80,7 @@ if __name__ == "__main__":
 
         #check if the game is over
         #if so, end connections and break out of the loop
-        if (messages[0][2] > 4 | messages[0][3] > 4):
+        if (messages[0][2] > 4 or messages[0][3] > 4):
             clientOneSocket.close()
             clientTwoSocket.close()
             server.close()

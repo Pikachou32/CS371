@@ -10,9 +10,13 @@ import pygame
 import tkinter as tk
 import sys
 import socket
+import pickle
 
 from assets.code.helperCode import *
 
+# MY METHODS START HERE
+
+# MY METHODS END HERE
 
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
@@ -84,14 +88,10 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
-        ack = False
         message = (playerPaddleObj, ball, lScore, rScore, sync)
-        #repeatedly send message and wait for acknowledgement
-        while not (ack):
-            client.send(message)
-            resp = client.recv(1024)
-            if (resp == "Ack"):
-                ack = True
+        msg_bytes = pickle.dumps(message)
+        client.send(msg_bytes)
+
         # =========================================================================================
 
         # Update the player paddle and opponent paddle's location on the screen
@@ -163,13 +163,12 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
         resp = client.recv(1024)
-        message = "Ack"
-        client.send(message)
-        opponentPaddleObj = resp[0]
-        if (sync < resp[4]): # if client is out of sync
-            ball = resp[1]
-            lScore = resp[2]
-            rScore = resp[3]
+        resp_tuple = pickle.loads(resp)
+        opponentPaddleObj = resp_tuple[0]
+        if (sync < resp_tuple[4]): # if client is out of sync
+            ball = resp_tuple[1]
+            lScore = resp_tuple[2]
+            rScore = resp_tuple[3]
         # =========================================================================================
 
 
@@ -190,10 +189,12 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect(("localhost",12321))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
     resp = client.recv(1024)
-    screenWidth, screenHeight, side = resp
+    screenWidth, screenHeight, side = pickle.loads(resp)
+    
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
@@ -216,23 +217,29 @@ def startScreen():
     titleLabel = tk.Label(image=image)
     titleLabel.grid(column=0, row=0, columnspan=2)
 
+    initLabel = tk.Label(text="Initials:")
+    initLabel.grid(column=0, row=1, sticky="W", padx=8)
+
+    initEntry = tk.Entry(app)
+    initEntry.grid(column=1, row=1)
+
     ipLabel = tk.Label(text="Server IP:")
-    ipLabel.grid(column=0, row=1, sticky="W", padx=8)
+    ipLabel.grid(column=0, row=2, sticky="W", padx=8)
 
     ipEntry = tk.Entry(app)
-    ipEntry.grid(column=1, row=1)
+    ipEntry.grid(column=1, row=2)
 
     portLabel = tk.Label(text="Server Port:")
-    portLabel.grid(column=0, row=2, sticky="W", padx=8)
+    portLabel.grid(column=0, row=3, sticky="W", padx=8)
 
     portEntry = tk.Entry(app)
-    portEntry.grid(column=1, row=2)
+    portEntry.grid(column=1, row=3)
 
     errorLabel = tk.Label(text="")
-    errorLabel.grid(column=0, row=4, columnspan=2)
+    errorLabel.grid(column=0, row=5, columnspan=2)
 
     joinButton = tk.Button(text="Join", command=lambda: joinServer(ipEntry.get(), portEntry.get(), errorLabel, app))
-    joinButton.grid(column=0, row=3, columnspan=2)
+    joinButton.grid(column=0, row=4, columnspan=2)
 
     app.mainloop()
 
@@ -242,6 +249,6 @@ if __name__ == "__main__":
     # Uncomment the line below if you want to play the game without a server to see how it should work
     # the startScreen() function should call playGame with the arguments given to it by the server this is
     # here for demo purposes only
-    # playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+    #playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
 
     
