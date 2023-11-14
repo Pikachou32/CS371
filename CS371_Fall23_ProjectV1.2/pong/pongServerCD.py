@@ -1,5 +1,5 @@
 # =================================================================================================
-# Contributing Authors:	    <Anyone who touched the code>
+# Contributing Authors:	    Clayton, Willow
 # Email Addresses:          <Your uky.edu email addresses>
 # Date:                     <The date the file was last edited>
 # Purpose:                  <How this file contributes to the project>
@@ -8,10 +8,12 @@
 
 import socket
 import threading
+import pickle
 
 #define these ahead of time?
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
+messages = [0, 0]
 
 # Use this file to write your server logic
 # You will need to support at least two clients
@@ -20,54 +22,26 @@ SCREEN_HEIGHT = 1080
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
 
-# function to determine which client sent information
-def getClientInfo(clientSocket, clientAddress):
-
-
-# function to communicate with a given client
-def comReceivingProtocol(clientSocket):
+def transferData(clientSocket, clientAddress):
     while (True):
-
-        #Pull the information from the first client
-        clientMessage = clientSocket.recv(1024)
-        clientMessage.decode()
+        message = clientSocket.recv(1024)
+        msg_bytes = pickle.dump(data)
+        clientSocket.send(message)
         
-        #Pass this information to the second client
-        updateForClient = clientMessage
-        comSendingProtocol(updateForClient)
-
-        server.send(updateForClient, clientSocket)
-
-        #Handle the acknowledgement from the second client
-        clientTwoResponse = clientTwoSocket.recv(1024)
-        clientTwoResponse.decode()
-        clientTwoACK = clientTwoResponse[5]
-        if (clientTwoACK != 1):
-            server.send(updateForClientTwo, clientTwoSocket)
-        else:
-            server.send(clientTwoResponse, clientOneSocket)
-
-def comSendingProtocol(message):
-    updateForClient = message
-    server.send(updateForClient)
-
-
-        
-
-
-
-
+    clientSocket.close()
 
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #create server
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("localhost", 12321))
+    print("Awaiting connection...")
     server.listen(5) #listen for 5 concurrent connection attempts
 
     #accept two connections
     clientOneSocket, clientOneAddress = server.accept()
     clientTwoSocket, clientTwoAddress = server.accept()
+    print("Both clients have connected, running initial setup")
 
     #assign sides, determine screen size
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
@@ -76,16 +50,28 @@ if __name__ == "__main__":
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
     clientTwoSocket.send(msg)
 
-    #create threads
-    thread1 = threading.Thread(target=comProtocol, args=(clientOneSocket, clientOneAddress,))
-    thread2 = threading.Thread(target=comProtocol, args=(clientTwoSocket, clientTwoAddress,))
+    print("Initial setup complete, starting game loop")
+    while (True): #repeat until connection is broken
+        #receive data first
+        thread1 = threading.Thread(target=transferData, args=(clientOneSocket, 1,))
+        thread2 = threading.Thread(target=transferData, args=(clientTwoSocket, 2,))
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
 
-    thread1.start()
-    thread2.start()
+        #then send data
+        thread1 = threading.Thread(target=transferData, args=(clientOneSocket, messages[1],))
+        thread2 = threading.Thread(target=transferData, args=(clientTwoSocket, messages[0],))
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
 
-    
-    thread1.join()
-    thread2.join()
-
-    #print exit message or something
-    #basically do whatever needs to be done after the game is o
+        #check if the game is over
+        #if so, end connections and break out of the loop
+        if (messages[0][2] > 4 | messages[0][3] > 4):
+            clientOneSocket.close()
+            clientTwoSocket.close()
+            server.close()
+            break
