@@ -91,6 +91,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         message = (playerPaddleObj, ball, lScore, rScore, sync)
         msg_bytes = pickle.dumps(message)
         client.send(msg_bytes)
+        #repeatedly send message and wait for acknowledgement
+    
 
         # =========================================================================================
 
@@ -163,12 +165,11 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
         resp = client.recv(1024)
-        resp_tuple = pickle.loads(resp)
-        opponentPaddleObj = resp_tuple[0]
-        if (sync < resp_tuple[4]): # if client is out of sync
-            ball = resp_tuple[1]
-            lScore = resp_tuple[2]
-            rScore = resp_tuple[3]
+        resp_turple = pickle.loads(resp)
+        opponentPaddleObj = resp_turple[0]
+        ball = resp_turple[1]
+        lScore = resp_turple[2]
+        rScore = resp_turple[3]
         # =========================================================================================
 
 
@@ -195,7 +196,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     resp = client.recv(1024)
     screenWidth, screenHeight, side = pickle.loads(resp)
     
-
+    client.send(pickle.dumps(side))                                                         #allows us to send player "str" to server 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
     # You may or may not need to call this, depending on how many times you update the label
