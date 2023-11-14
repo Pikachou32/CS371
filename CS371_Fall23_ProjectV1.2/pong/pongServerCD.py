@@ -8,6 +8,7 @@
 
 import socket
 import threading
+import pickle
 
 #define these ahead of time?
 SCREEN_WIDTH = 1920
@@ -24,7 +25,9 @@ messages = [0, 0]
 def transferData(clientSocket, clientAddress):
     while (True):
         message = clientSocket.recv(1024)
+        msg_bytes = pickle.dump(data)
         clientSocket.send(message)
+        
     clientSocket.close()
 
 
