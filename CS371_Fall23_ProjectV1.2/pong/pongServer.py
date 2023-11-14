@@ -7,8 +7,15 @@
 # =================================================================================================
 
 import socket
-import threading
 import pickle 
+import threading
+#define these ahead of time?
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
+messages = [0, 0]
+
+
+
 
 # Use this file to write your server logic
 # You will need to support at least two clients
@@ -17,19 +24,51 @@ import pickle
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
 
-#global variables
-SCREEN_WIDTH = 640
-SCREEN_HEIGHT = 480
-messages = [0, 0]
-
 # receive data from the given client
 def receiveData(clientSocket, clientNum): 
-    messages[clientNum-1] = pickle.loads(clientSocket.recv(1024)) #clientNum-1 because arrays are 0-indexed
+    try:
+        while True:
+            data = clientSocket.recv(1024)
+            if not data:
+                break
+            data_received = pickle.loads(data)
+            
+            messages[clientNum -1] = data_received
+    except Exception as e:
+        print(f"Error receiving data from client {clientNum}: {e}")
+    
 
 #send data to the given client
 def sendData(clientSocket, data):
-    data_bytes = pickle.dumps(data)
-    clientSocket.send(data_bytes)
+    try:
+        msg_bytes = pickle.dumps(data)
+        clientSocket.send(msg_bytes)
+    except  Exception as e:
+        print(f"Error sending data to client: {e}")
+
+
+def handle_client(client_socket, client_num):
+    try:
+        # Your code to send initial information to the client (e.g., screen size and side)
+        initial_info = (SCREEN_WIDTH, SCREEN_HEIGHT, "left" if client_num == 1 else "right")
+        msg_bytes = pickle.dumps(initial_info)
+        client_socket.send(msg_bytes)
+
+        while True:
+            # Your main game loop logic goes here
+            # Update game state, handle synchronization, etc.
+
+            # Send data to the client
+            data_to_send = messages[1 - client_num]  # Send the other client's data
+            sendData(client_socket, data_to_send)
+
+            # Receive data from the client
+            receiveData(client_socket, client_num)
+    except Exception as e:
+        print(f"Error handling client {client_num}: {e}")
+    finally:
+        client_socket.close()
+
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #create server
@@ -39,11 +78,11 @@ if __name__ == "__main__":
 
     #accept two connections
     print("Waiting for connection . . .")
-    clientOneSocket, clientOneAddress = server.accept()
+    ClientOneSocket, clientOneAddress = server.accept()
     print(f"received connection from {clientOneAddress}")
 
     print("Waiting for connection . . .")
-    clientTwoSocket, clientTwoAddress = server.accept()
+    ClientTwoSocket, clientTwoAddress = server.accept()
     print(f"received connection from {clientTwoAddress}")
 
         
@@ -51,36 +90,20 @@ if __name__ == "__main__":
 
 
 
-    #assign sides, determine screen size
-    msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
-    msg_bytes = pickle.dumps(msg)
-    clientOneSocket.send(msg_bytes)
-
-    msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
-    msg_bytes = pickle.dumps(msg)
-    clientTwoSocket.send(msg_bytes)
-    
-    while (True): #repeat until connection is broken
+   
+    try:
+        while (True): #repeat until connection is broken
         #receive data first
-        thread1 = threading.Thread(target=receiveData, args=(clientOneSocket, 1,))
-        thread2 = threading.Thread(target=receiveData, args=(clientTwoSocket, 2,))
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
+            thread1 = threading.Thread(target=handle_client, args=(ClientOneSocket, 1,))
+            thread2 = threading.Thread(target=handle_client, args=(ClientTwoSocket, 2,))
+            thread1.start()
+            thread2.start()
+            thread1.join()
+            thread2.join()
+    except Exception as e:
+        print("An error occured: {e}")
+    finally:
+        ClientOneSocket.close()
+        ClientTwoSocket.close()
+        server.close()
 
-        #then send data
-        thread1 = threading.Thread(target=sendData, args=(clientOneSocket, messages[1],))
-        thread2 = threading.Thread(target=sendData, args=(clientTwoSocket, messages[0],))
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
-
-        #check if the game is over
-        #if so, end connections and break out of the loop
-        if (messages[0][2] > 4 or messages[0][3] > 4):
-            clientOneSocket.close()
-            clientTwoSocket.close()
-            server.close()
-            break
