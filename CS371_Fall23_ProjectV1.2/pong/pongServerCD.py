@@ -1,5 +1,5 @@
 # =================================================================================================
-# Contributing Authors:	    Clayton, Willow
+# Contributing Authors:	    <Anyone who touched the code>
 # Email Addresses:          <Your uky.edu email addresses>
 # Date:                     <The date the file was last edited>
 # Purpose:                  <How this file contributes to the project>
@@ -8,7 +8,6 @@
 
 import socket
 import threading
-import pickle
 
 #define these ahead of time?
 SCREEN_WIDTH = 1920
@@ -22,13 +21,29 @@ messages = [0, 0]
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
 
-def transferData(clientSocket, clientAddress):
-    while (True):
-        message = clientSocket.recv(1024)
-        msg_bytes = pickle.dump(data)
-        clientSocket.send(message)
-        
-    clientSocket.close()
+# Communication protocol for client-server
+def clientHandler(clientSocket, clientAddress, clientNum):
+    try:
+        while (True):
+            if (clientNum == 0):
+                clientOneGameState = clientSocket.recv(1024).decode("utf-8")
+            else:
+                clientTwoGameState = clientSocket.recv(1024).decode("utf-8")
+            
+        # Variable to hold each sync variable to determine how out of sync
+        clientOneSync = clientOneGameState[4]
+        clientTwoSync = clientTwoGameState[4]
+
+        # Determine which game state is sent back to each client
+        if (clientOneSync < clientTwoSync):
+            clientSocket.send(clientTwoGameState.encode("utf-8"))
+        else:
+            clientSocket.send(clientOneGameState.encode("utf-8"))
+
+    finally:
+        server.close()
+        thread1.join()
+        thread2.join()
 
 
 if __name__ == "__main__":
@@ -43,6 +58,9 @@ if __name__ == "__main__":
     clientTwoSocket, clientTwoAddress = server.accept()
     print("Both clients have connected, running initial setup")
 
+    clientOne = (clientOneSocket, clientOneAddress, 0)
+    clientTwo = (clientTwoSocket, clientTwoAddress, 1)
+
     #assign sides, determine screen size
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
     clientOneSocket.send(msg)
@@ -53,16 +71,8 @@ if __name__ == "__main__":
     print("Initial setup complete, starting game loop")
     while (True): #repeat until connection is broken
         #receive data first
-        thread1 = threading.Thread(target=transferData, args=(clientOneSocket, 1,))
-        thread2 = threading.Thread(target=transferData, args=(clientTwoSocket, 2,))
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
-
-        #then send data
-        thread1 = threading.Thread(target=transferData, args=(clientOneSocket, messages[1],))
-        thread2 = threading.Thread(target=transferData, args=(clientTwoSocket, messages[0],))
+        thread1 = threading.Thread(target=clientHandler, args=(clientOne))
+        thread2 = threading.Thread(target=clientHandler, args=(clientTwo))
         thread1.start()
         thread2.start()
         thread1.join()
