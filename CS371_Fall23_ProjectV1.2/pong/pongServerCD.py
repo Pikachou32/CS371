@@ -27,9 +27,9 @@ def clientHandler(clientSocket, clientAddress, clientNum):
     try:
         while (True):
             if (clientNum == 0):
-                clientOneGameState = pickle.loads(clientSocket.recv(1024).decode("utf-8"))
+                clientOneGameState = pickle.loads(clientSocket.recv(1024))
             else:
-                clientTwoGameState = pickle.loads(clientSocket.recv(1024).decode("utf-8"))
+                clientTwoGameState = pickle.loads(clientSocket.recv(1024))
             
         # Variable to hold each sync variable to determine how out of sync
         clientOneSync = clientOneGameState[4]
@@ -37,10 +37,10 @@ def clientHandler(clientSocket, clientAddress, clientNum):
 
         # Determine which game state is sent back to each client
         if (clientOneSync < clientTwoSync):
-            gameState = pickle.dumps(clientTwoGameState.encode("utf-8"))
+            gameState = pickle.dumps(clientTwoGameState)
             clientSocket.send(gameState)
         else:
-            gameState = pickle.dumps(clientOneGameState.encode("utf-8"))
+            gameState = pickle.dumps(clientOneGameState)
             clientSocket.send(gameState)
 
     finally:
