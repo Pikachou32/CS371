@@ -8,6 +8,7 @@
 
 import socket
 import threading
+import pickle
 
 #define these ahead of time?
 SCREEN_WIDTH = 1920
@@ -26,9 +27,9 @@ def clientHandler(clientSocket, clientAddress, clientNum):
     try:
         while (True):
             if (clientNum == 0):
-                clientOneGameState = clientSocket.recv(1024).decode("utf-8")
+                clientOneGameState = pickle.loads(clientSocket.recv(1024).decode("utf-8"))
             else:
-                clientTwoGameState = clientSocket.recv(1024).decode("utf-8")
+                clientTwoGameState = pickle.loads(clientSocket.recv(1024).decode("utf-8"))
             
         # Variable to hold each sync variable to determine how out of sync
         clientOneSync = clientOneGameState[4]
@@ -36,14 +37,17 @@ def clientHandler(clientSocket, clientAddress, clientNum):
 
         # Determine which game state is sent back to each client
         if (clientOneSync < clientTwoSync):
-            clientSocket.send(clientTwoGameState.encode("utf-8"))
+            gameState = pickle.dumps(clientTwoGameState.encode("utf-8"))
+            clientSocket.send(gameState)
         else:
-            clientSocket.send(clientOneGameState.encode("utf-8"))
+            gameState = pickle.dumps(clientOneGameState.encode("utf-8"))
+            clientSocket.send(gameState)
 
     finally:
         server.close()
         thread1.join()
         thread2.join()
+
 
 
 if __name__ == "__main__":
