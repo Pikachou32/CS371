@@ -45,22 +45,8 @@ def clientHandler(clientSocket, player, other_client ):
             else:
                 print(f"received from player: {player}: ", game_state)
                 print(f"sending from player : {player}: ", game_state)
+        
 
-# Update the server's internal game state
-
-            server_player_paddle_y = game_state['player_paddle']
-            server_opponent_paddle_y = game_state['opponent_paddle']
-            server_ball_position = game_state['ball']
-            server_l_score = game_state['l_score']
-            server_r_score = game_state['r_score']
-
-
-# Send the updated game state to both players
-            game_state['player_paddle'] = server_player_paddle_y
-            game_state['opponent_paddle'] = server_opponent_paddle_y
-            game_state['ball'] = server_ball_position
-            game_state['l_score'] = server_l_score
-            game_state['r_score'] = server_r_score
 
             if other_client is not None:
                 other_client.sendall(pickle.dumps(game_state))
@@ -69,7 +55,6 @@ def clientHandler(clientSocket, player, other_client ):
         except Exception as e:
             print(f"Error in player {player}: {e}")
             break
-
 
 
 if __name__ == "__main__":    
@@ -82,17 +67,19 @@ if __name__ == "__main__":
     player = 0
     client_sockets = [None, None]
 
-    while True:
-        clientSocket, clientAddress = server.accept()
-        print(f"connected to: {clientAddress}")
-        # Store the client socket in the list
-        client_sockets[player] = clientSocket
+    clientSocket, clientAddress = server.accept()
+    print(f"connected to: {clientAddress}")
+    # Store the client socket in the list
+    client_sockets[player] = clientSocket
     
     
-        client_thread = threading.Thread(target=clientHandler, args=(clientSocket,player, client_sockets[1- player]) )
-        client_thread.start()
-        player += 1
+    client_thread = threading.Thread(target=clientHandler, args=(clientSocket,player, client_sockets[1- player]) )
+    player += 1
+    
+    clientSocket, clientAddress = server.accept()
+    print(f"connected to: {clientAddress}")
+    client_thread2 = threading.Thread(target=clientHandler, args=(clientSocket, player, client_sockets[1 - player]))
+    client_thread.start()
+    client_thread2.start()
 
-        if player == 2:
-            break
 
