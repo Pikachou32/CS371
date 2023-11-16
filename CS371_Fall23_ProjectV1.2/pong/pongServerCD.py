@@ -11,8 +11,8 @@ import threading
 import pickle
 
 #define these ahead of time?
-SCREEN_WIDTH = 1920
-SCREEN_HEIGHT = 1080
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
 messages = [0, 0]
 lock = threading.Lock()
 
