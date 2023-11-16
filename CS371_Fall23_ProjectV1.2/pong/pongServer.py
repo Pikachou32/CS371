@@ -52,12 +52,6 @@ def clientHandler(clientSocket, player, other_client ):
             print(f"Error in player {player}: {e}")
             break
 
-#send data to the given client
-def transferData(clientSocket, client_num):
-    while (True):
-        message = clientSocket.recv(1024)
-        msg_bytes = pickle.dump(message)
-        clientSocket.send(msg_bytes)
 
 
 if __name__ == "__main__":    
@@ -83,5 +77,4 @@ if __name__ == "__main__":
 
         if player == 2:
             break
-
 
