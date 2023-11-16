@@ -91,6 +91,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Feel free to change when the score is updated to suit your needs/requirements
         try:
             game_state = {
+                'sync_counter': sync,
                 'player_paddle': playerPaddleObj.rect.y,
                 'opponent_paddle': opponentPaddleObj.rect.y,
                 'ball': (ball.rect.x, ball.rect.y),
@@ -172,10 +173,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # catch up (use their info)
         sync += 1
         
-
-        game_state['player_paddle'] = playerPaddleObj.rect.y
-
-# =========================================================================================
+# ========================================================================================
 # Send your server update here at the end of the game loop to sync your game with your
 # opponent's game
         try:
