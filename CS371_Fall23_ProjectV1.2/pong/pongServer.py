@@ -30,6 +30,7 @@ def clientHandler(clientSocket, player, other_client ):
     else:
         side = "right"
     #sending informationt to client
+    sync_player = [0, 0]
     setup_info = {'screen_width': SCREEN_WIDTH, 'screen_height': SCREEN_HEIGHT, 'player_side': side}
     clientSocket.sendall(pickle.dumps(setup_info))
     data = " "
@@ -44,8 +45,25 @@ def clientHandler(clientSocket, player, other_client ):
             else:
                 print(f"received from player: {player}: ", game_state)
                 print(f"sending from player : {player}: ", game_state)
-            
-            other_client.sendall(pickle.dumps(game_state))
+
+# Update the server's internal game state
+
+            server_player_paddle_y = game_state['player_paddle']
+            server_opponent_paddle_y = game_state['opponent_paddle']
+            server_ball_position = game_state['ball']
+            server_l_score = game_state['l_score']
+            server_r_score = game_state['r_score']
+
+
+# Send the updated game state to both players
+            game_state['player_paddle'] = server_player_paddle_y
+            game_state['opponent_paddle'] = server_opponent_paddle_y
+            game_state['ball'] = server_ball_position
+            game_state['l_score'] = server_l_score
+            game_state['r_score'] = server_r_score
+
+            if other_client is not None:
+                other_client.sendall(pickle.dumps(game_state))
             clientSocket.sendall(pickle.dumps(game_state))
         
         except Exception as e:
