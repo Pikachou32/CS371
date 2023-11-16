@@ -49,8 +49,6 @@ def clientHandler(clientSocket, clientNum):
 
     finally:
         server.close()
-        thread1.join()
-        thread2.join()
 
 
 
@@ -85,11 +83,3 @@ if __name__ == "__main__":
         thread2 = threading.Thread(target=clientHandler, args=(clientTwo))
         thread1.start()
         thread2.start()
-
-        #check if the game is over
-        #if so, end connections and break out of the loop
-        #if (messages[0][2] > 4 | messages[0][3] > 4):
-            #clientOneSocket.close()
-            #clientTwoSocket.close()
-            #server.close()
-            #break
