@@ -94,8 +94,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                 'player_paddle': playerPaddleObj.rect.y,
                 'opponent_paddle': opponentPaddleObj.rect.y,
                 'ball': (ball.rect.x, ball.rect.y),
-               'l_score': lScore,
-               'r_score': rScore
+                'l_score': lScore,
+                'r_score': rScore
             }
 
         # Send the game state to the server
@@ -173,10 +173,20 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         sync += 1
         
 
-        # =========================================================================================
-        # Send your server update here at the end of the game loop to sync your game with your
-        # opponent's game
+        game_state['player_paddle'] = playerPaddleObj.rect.y
 
+# =========================================================================================
+# Send your server update here at the end of the game loop to sync your game with your
+# opponent's game
+        try:
+    # Add the sync variable to the game state to inform the server about the synchronization status
+            game_state['sync'] = sync
+
+    # Send the game state to the server
+            client.sendall(pickle.dumps(game_state))
+        except socket.error as e:
+            print(f"Error sending game state: {e}")
+            break
         # =========================================================================================
 
 
