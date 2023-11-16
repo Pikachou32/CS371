@@ -32,20 +32,20 @@ def clientHandler(clientSocket, clientNum):
             else:
                 clientTwoGameState = pickle.loads(clientSocket.recv(1024))
             
-        # Thread lock to prevent sync updates during calculation
-        with lock:
+            # Thread lock to prevent sync updates during calculation
+            with lock:
+                
+                # Variable to hold each sync variable to determine how out of sync
+                clientOneSync = clientOneGameState['sync']
+                clientTwoSync = clientTwoGameState['sync']
 
-            # Variable to hold each sync variable to determine how out of sync
-            clientOneSync = clientOneGameState['sync']
-            clientTwoSync = clientTwoGameState['sync']
-
-            # Determine which game state is sent back to each client
-            if (clientOneSync < clientTwoSync):
-                gameState = pickle.dumps(clientTwoGameState)
-                clientSocket.send(gameState)
-            else:
-                gameState = pickle.dumps(clientOneGameState)
-                clientSocket.send(gameState)
+                # Determine which game state is sent back to each client
+                if (clientOneSync < clientTwoSync):
+                    gameState = pickle.dumps(clientTwoGameState)
+                    clientSocket.send(gameState)
+                else:
+                    gameState = pickle.dumps(clientOneGameState)
+                    clientSocket.send(gameState)
 
     finally:
         server.close()
@@ -88,8 +88,8 @@ if __name__ == "__main__":
 
         #check if the game is over
         #if so, end connections and break out of the loop
-        if (messages[0][2] > 4 | messages[0][3] > 4):
-            clientOneSocket.close()
-            clientTwoSocket.close()
-            server.close()
-            break
+        #if (messages[0][2] > 4 | messages[0][3] > 4):
+            #clientOneSocket.close()
+            #clientTwoSocket.close()
+            #server.close()
+            #break
