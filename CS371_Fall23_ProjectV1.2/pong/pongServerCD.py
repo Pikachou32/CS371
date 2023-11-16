@@ -77,9 +77,7 @@ if __name__ == "__main__":
     clientTwoSocket.send(messageTwo)
 
     print("Initial setup complete, starting game loop")
-    while (True): #repeat until connection is broken
-        #receive data first
-        thread1 = threading.Thread(target=clientHandler, args=(clientOne))
-        thread2 = threading.Thread(target=clientHandler, args=(clientTwo))
-        thread1.start()
-        thread2.start()
+    thread1 = threading.Thread(target=clientHandler, args=(clientOne))
+    thread2 = threading.Thread(target=clientHandler, args=(clientTwo))
+    thread1.start()
+    thread2.start()
