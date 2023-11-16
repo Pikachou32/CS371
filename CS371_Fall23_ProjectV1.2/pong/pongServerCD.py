@@ -24,28 +24,27 @@ lock = threading.Lock()
 # clients are and take actions to resync the games
 
 # Communication protocol for client-server
-def clientHandler(clientSocket, clientNum):
+def clientHandler(clientOneSocket, clientTwoSocket):
     try:
         while (True):
-            if (clientNum == 0):
-                clientOneGameState = pickle.loads(clientSocket.recv(1024))
-            else:
-                clientTwoGameState = pickle.loads(clientSocket.recv(1024))
+                clientOneGameState = pickle.loads(clientOneSocket.recv(1024))
+                clientTwoGameState = pickle.loads(clientTwoSocket.recv(1024))
             
-            # Thread lock to prevent sync updates during calculation
-            with lock:
+                # Thread lock to prevent sync updates during calculation
+                with lock:
                 
-                # Variable to hold each sync variable to determine how out of sync
-                clientOneSync = clientOneGameState['sync']
-                clientTwoSync = clientTwoGameState['sync']
+                    # Variable to hold each sync variable to determine how out of sync
+                    clientOneSync = clientOneGameState['sync']
+                    clientTwoSync = clientTwoGameState['sync']
+                
 
-                # Determine which game state is sent back to each client
-                if (clientOneSync < clientTwoSync):
-                    gameState = pickle.dumps(clientTwoGameState)
-                    clientSocket.send(gameState)
-                else:
-                    gameState = pickle.dumps(clientOneGameState)
-                    clientSocket.send(gameState)
+                    # Determine which game state is sent back to each client
+                    if (clientOneSync < clientTwoSync):
+                        gameState = pickle.dumps(clientTwoGameState)
+                        clientOneSocket.send(gameState)
+                    else:
+                        gameState = pickle.dumps(clientOneGameState)
+                        clientTwoSocket.send(gameState)
 
     finally:
         server.close()
@@ -64,20 +63,19 @@ if __name__ == "__main__":
     clientTwoSocket, clientTwoAddress = server.accept()
     print("Both clients have connected, running initial setup")
 
-    clientOne = (clientOneSocket, 0)
-    clientTwo = (clientTwoSocket, 1)
 
     #assign sides, determine screen size
-    msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
+    msg = {'screen_width': SCREEN_WIDTH, 'screen_height': SCREEN_HEIGHT, 'player_side': 'left'}
     message = pickle.dumps(msg)
     clientOneSocket.send(message)
 
-    msgTwo = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
+    msgTwo = {'screen_width': SCREEN_WIDTH, 'screen_height': SCREEN_HEIGHT, 'player_side': 'right'}
     messageTwo = pickle.dumps(msgTwo)
     clientTwoSocket.send(messageTwo)
 
     print("Initial setup complete, starting game loop")
-    thread1 = threading.Thread(target=clientHandler, args=(clientOne))
-    thread2 = threading.Thread(target=clientHandler, args=(clientTwo))
+        #receive data first
+    thread1 = threading.Thread(target=clientHandler, args=(clientOneSocket, clientTwoSocket))
+    thread2 = threading.Thread(target=clientHandler, args=(clientTwoSocket, clientOneSocket))
     thread1.start()
     thread2.start()
