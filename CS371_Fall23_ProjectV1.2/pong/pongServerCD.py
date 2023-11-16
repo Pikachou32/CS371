@@ -67,10 +67,12 @@ if __name__ == "__main__":
 
     #assign sides, determine screen size
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
-    clientOneSocket.send(msg)
+    message = pickle.dumps(msg)
+    clientOneSocket.send(message)
 
-    msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
-    clientTwoSocket.send(msg)
+    msgTwo = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
+    messageTwo = pickle.dumps(msgTwo)
+    clientTwoSocket.send(messageTwo)
 
     print("Initial setup complete, starting game loop")
     while (True): #repeat until connection is broken
