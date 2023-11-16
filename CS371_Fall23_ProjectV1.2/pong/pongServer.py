@@ -25,45 +25,31 @@ messages = [0, 0]
 # clients are and take actions to resync the games
 
 # receive data from the given client
-def receiveData(clientSocket, clientNum): 
-    try:
-        while True:
-            data = clientSocket.recv(1024)
-            if not data:
-                break
-            data_received = pickle.loads(data)
-            
-            messages[clientNum -1] = data_received
-    except Exception as e:
-        print(f"Error receiving data from client {clientNum}: {e}")
-    
 
 #send data to the given client
-def sendData(clientSocket, data):
-    try:
-        msg_bytes = pickle.dumps(data)
+def transferData(clientSocket, client_num):
+    while (True):
+        message = clientSocket.recv(1024)
+        msg_bytes = pickle.dump(message)
         clientSocket.send(msg_bytes)
-    except  Exception as e:
-        print(f"Error sending data to client: {e}")
-
 
 def player_handle(client_socket, client_num):
     try:
-        # Your code to send initial information to the client (e.g., screen size and side)
         initial_info = (SCREEN_WIDTH, SCREEN_HEIGHT, "left" if client_num == 1 else "right")
         msg_bytes = pickle.dumps(initial_info)
         client_socket.send(msg_bytes)
 
         while True:
-            # Your main game loop logic goes here
-            # Update game state, handle synchronization, etc.
+
 
             # Send data to the client
             data_to_send = messages[1 - client_num]  # Send the other client's data
-            sendData(client_socket, data_to_send)
+            transferData(client_socket, data_to_send)
 
             # Receive data from the client
-            receiveData(client_socket, client_num)
+            #receiveData(client_socket, client_num)
+
+
     except Exception as e:
         print(f"Error handling client {client_num}: {e}")
     finally:
@@ -85,15 +71,8 @@ if __name__ == "__main__":
     ClientTwoSocket, clientTwoAddress = server.accept()
     print(f"received connection from {clientTwoAddress}")
 
-        
-
-
-
-
    
     try:
-        while (True): #repeat until connection is broken
-        #receive data first
             thread1 = threading.Thread(target=player_handle, args=(ClientOneSocket, 1,))
             thread2 = threading.Thread(target=player_handle, args=(ClientTwoSocket, 2,))
             thread1.start()

@@ -10,8 +10,8 @@ import pygame
 import tkinter as tk
 import sys
 import socket
-import pickle # allows us to objects to bytes while sending it around
-
+import pickle
+import time
 from assets.code.helperCode import *
 
 # MY METHODS START HERE
@@ -89,9 +89,20 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
-        message = (playerPaddleObj, ball, lScore, rScore, sync)
-        msg_bytes = pickle.dumps(message)
-        client.send(msg_bytes)
+        try:
+            game_state = {
+                'player_paddle': playerPaddleObj.rect.y,
+                'opponent_paddle': opponentPaddleObj.rect.y,
+                'ball': (ball.rect.x, ball.rect.y),
+               'l_score': lScore,
+               'r_score': rScore
+            }
+
+        # Send the game state to the server
+            client.sendall(pickle.dumps(game_state))
+        except socket.error as e:
+            print(f"Error sending game state: {e}")
+            break
         # =========================================================================================
 
         # Update the player paddle and opponent paddle's location on the screen
@@ -161,21 +172,11 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # catch up (use their info)
         sync += 1
         
-        #Logic for decoding and comparing sync variables
-        msg = client.recv(1024)
-        msg_turple = pickle.loads(msg)
-        if (sync < msg[4]):
-            opponentPaddleObj = msg_turple[0]
-            ball = msg_turple[1]
-            lScore = msg_turple[2]
-            rScore = msg_turple[3]
 
         # =========================================================================================
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
-        message = (playerPaddleObj, ball, lScore, rScore, sync)
-        msg_bytes = pickle.dumps(message)
-        client.send(msg_bytes)
+
         # =========================================================================================
 
 
@@ -199,10 +200,12 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client.connect(("localhost",12321))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
-    resp = client.recv(1024)
-    screenWidth, screenHeight, side = pickle.loads(resp)
+    setup_info = client.recv(1024)
+    game_setup = pickle.loads(setup_info)
+    screenWidth, screenHeight, side = game_setup['screen_width'], game_setup['screen_height'], game_setup['player_side']
 
-    client.send(pickle.dumps(side))                                                         #allows us to send player "str" to server
+
+
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
     # You may or may not need to call this, depending on how many times you update the label
