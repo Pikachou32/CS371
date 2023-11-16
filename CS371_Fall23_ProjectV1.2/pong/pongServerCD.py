@@ -14,6 +14,7 @@ import pickle
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 messages = [0, 0]
+lock = threading.Lock()
 
 # Use this file to write your server logic
 # You will need to support at least two clients
@@ -23,7 +24,7 @@ messages = [0, 0]
 # clients are and take actions to resync the games
 
 # Communication protocol for client-server
-def clientHandler(clientSocket, clientAddress, clientNum):
+def clientHandler(clientSocket, clientNum):
     try:
         while (True):
             if (clientNum == 0):
@@ -31,17 +32,20 @@ def clientHandler(clientSocket, clientAddress, clientNum):
             else:
                 clientTwoGameState = pickle.loads(clientSocket.recv(1024))
             
-        # Variable to hold each sync variable to determine how out of sync
-        clientOneSync = clientOneGameState[4]
-        clientTwoSync = clientTwoGameState[4]
+        # Thread lock to prevent sync updates during calculation
+        with lock:
 
-        # Determine which game state is sent back to each client
-        if (clientOneSync < clientTwoSync):
-            gameState = pickle.dumps(clientTwoGameState)
-            clientSocket.send(gameState)
-        else:
-            gameState = pickle.dumps(clientOneGameState)
-            clientSocket.send(gameState)
+            # Variable to hold each sync variable to determine how out of sync
+            clientOneSync = clientOneGameState[4]
+            clientTwoSync = clientTwoGameState[4]
+
+            # Determine which game state is sent back to each client
+            if (clientOneSync < clientTwoSync):
+                gameState = pickle.dumps(clientTwoGameState)
+                clientSocket.send(gameState)
+            else:
+                gameState = pickle.dumps(clientOneGameState)
+                clientSocket.send(gameState)
 
     finally:
         server.close()
@@ -62,8 +66,8 @@ if __name__ == "__main__":
     clientTwoSocket, clientTwoAddress = server.accept()
     print("Both clients have connected, running initial setup")
 
-    clientOne = (clientOneSocket, clientOneAddress, 0)
-    clientTwo = (clientTwoSocket, clientTwoAddress, 1)
+    clientOne = (clientOneSocket, 0)
+    clientTwo = (clientTwoSocket, 1)
 
     #assign sides, determine screen size
     msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
