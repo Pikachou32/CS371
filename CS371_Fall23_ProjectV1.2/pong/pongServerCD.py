@@ -36,8 +36,8 @@ def clientHandler(clientSocket, clientNum):
         with lock:
 
             # Variable to hold each sync variable to determine how out of sync
-            clientOneSync = clientOneGameState[4]
-            clientTwoSync = clientTwoGameState[4]
+            clientOneSync = clientOneGameState['sync']
+            clientTwoSync = clientTwoGameState['sync']
 
             # Determine which game state is sent back to each client
             if (clientOneSync < clientTwoSync):
@@ -85,8 +85,6 @@ if __name__ == "__main__":
         thread2 = threading.Thread(target=clientHandler, args=(clientTwo))
         thread1.start()
         thread2.start()
-        thread1.join()
-        thread2.join()
 
         #check if the game is over
         #if so, end connections and break out of the loop
