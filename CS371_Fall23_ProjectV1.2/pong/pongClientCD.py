@@ -15,6 +15,7 @@ import time
 from assets.code.helperCode import *
 
 BUFFER_SIZE = 2048
+server_killCondition = 0
 
 # MY METHODS START HERE
 
@@ -98,7 +99,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                 'ballX': ball.rect.x,
                 'ballY': ball.rect.y,
                 'l_score': lScore,
-                'r_score': rScore
+                'r_score': rScore,
+                'server_kill': server_killCondition
             }
 
             # Send the game state to the server
@@ -125,6 +127,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             textRect = textSurface.get_rect()
             textRect.center = ((screenWidth/2), screenHeight/2)
             winMessage = screen.blit(textSurface, textRect)
+            server_killCondition = 1
         else:
 
             # ==== Ball Logic =====================================================================
@@ -221,7 +224,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(("0.0.0.0", 12321))
+    client.connect(("10.47.242.102", 12321))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
     setup_info = client.recv(BUFFER_SIZE)
