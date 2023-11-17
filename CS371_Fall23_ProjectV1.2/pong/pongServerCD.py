@@ -30,6 +30,7 @@ server_ballX = 55
 server_ballY = 55
 server_lScore = 0
 server_rScore = 0
+server_killCondition = 0
 
 def clientHandler(clientSocket, player, other_client):
     # choosing sides
@@ -62,12 +63,20 @@ def clientHandler(clientSocket, player, other_client):
                     server_ballY = game_state['ballY']
                     server_lScore = game_state['l_score']
                     server_rScore = game_state['r_score']
+                    server_killCondition = game_state['server_kill']
 
                     # Determine which paddle is the current paddle
                     if (paddle == "left"):
                         server_leftPaddle = server_currentPaddle
                     else:
                         server_rightPaddle = server_currentPaddle
+
+                if (server_killCondition == 1):
+                    client_thread.join()
+                    client_thread2.join()
+                    client_sockets[0].close()
+                    client_sockets[1].close()
+                    server.close()
 
 
                 if not data:
@@ -82,8 +91,16 @@ def clientHandler(clientSocket, player, other_client):
                         'ballX': server_ballX,
                         'ballY': server_ballY,
                         'l_score': server_lScore,
-                        'r_score': server_rScore
+                        'r_score': server_rScore,
+                        'server_kill' : server_killCondition
                     }
+
+                    if (server_killCondition == 1):
+                        client_thread.join()
+                        client_thread2.join()
+                        client_sockets[0].close()
+                        client_sockets[1].close()
+                        server.close()
 
                     gameUpdate = pickle.dumps(server_state)
                     clientSocket.send(gameUpdate)
@@ -97,7 +114,7 @@ def clientHandler(clientSocket, player, other_client):
 
 if __name__ == "__main__":    
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)          # create server
-    server.bind(("0.0.0.0", 12321))
+    server.bind(("10.47.242.102", 12321))
     server.listen(5)  # listen for 5 concurrent connection attempts
 
     print("Awaiting connection...")
