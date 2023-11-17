@@ -1,8 +1,8 @@
 # =================================================================================================
-# Contributing Authors:	    <Anyone who touched the code>
-# Email Addresses:          <Your uky.edu email addresses>
-# Date:                     <The date the file was last edited>
-# Purpose:                  <How this file contributes to the project>
+# Contributing Authors:	    Clayton Davis, Victor Lopez, Willow Jordan
+# Email Addresses:          cada231@uky.edu, vhav222@uky.edu
+# Date:                     11/17/23
+# Purpose:                  This file implements the game for each client in order to run the game of Pong.
 # Misc:                     <Not Required.  Anything else you might want to include>
 # =================================================================================================
 
@@ -15,7 +15,6 @@ import time
 from assets.code.helperCode import *
 
 BUFFER_SIZE = 2048
-server_killCondition = 0
 
 # MY METHODS START HERE
 
@@ -26,7 +25,6 @@ server_killCondition = 0
 # to suit your needs.
 
 def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.socket) -> None:
-    global server_killCondition
     # Pygame inits
     pygame.mixer.pre_init(44100, -16, 2, 2048)
     pygame.init()
@@ -100,7 +98,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                 'ballY': ball.rect.y,
                 'l_score': lScore,
                 'r_score': rScore,
-                'server_kill': server_killCondition
             }
 
             # Send the game state to the server
@@ -127,7 +124,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             textRect = textSurface.get_rect()
             textRect.center = ((screenWidth/2), screenHeight/2)
             winMessage = screen.blit(textSurface, textRect)
-            server_killCondition = 1
         else:
 
             # ==== Ball Logic =====================================================================
@@ -173,6 +169,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         pygame.display.update()
         clock.tick(60)
 
+        #Receive the new game state from the server, update the client-side game state to reflect the new changes
         serverUpdate = pickle.loads(client.recv(BUFFER_SIZE))
         sync = serverUpdate['sync']
         left_paddle = serverUpdate['left_paddle']
@@ -184,12 +181,11 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         ball.rect.x = serverUpdate['ballX']
         ball.rect.y = serverUpdate['ballY']
         if (playerPaddle == "left"):
-            opponentPaddleObj.y = left_paddle
+            opponentPaddleObj.rect.y = right_paddle
         elif (playerPaddle == "right"):
-            opponentPaddleObj.y = right_paddle
+            opponentPaddleObj.rect.y = left_paddle
         ball.updatePos()
         print(f"Synchronized at sequence {sync}")
-
 
 
         # This number should be synchronized between you and your opponent.  If your number is larger
@@ -221,7 +217,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(("10.47.242.102", 12321))
+    client.connect(ip, int(port))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
     setup_info = client.recv(BUFFER_SIZE)
