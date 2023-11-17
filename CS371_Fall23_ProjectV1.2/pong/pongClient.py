@@ -14,6 +14,8 @@ import pickle
 import time
 from assets.code.helperCode import *
 
+BUFFER = 2048
+
 # MY METHODS START HERE
 
 # MY METHODS END HERE
@@ -91,17 +93,29 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Feel free to change when the score is updated to suit your needs/requirements
         try:
             game_state = {
+                'sync': sync,
                 'player_paddle': playerPaddleObj.rect.y,
-                'opponent_paddle': opponentPaddleObj.rect.y,
                 'ball': (ball.rect.x, ball.rect.y),
-               'l_score': lScore,
-               'r_score': rScore
+                'l_score': lScore,
+                'r_score': rScore
             }
 
         # Send the game state to the server
             client.sendall(pickle.dumps(game_state))
+
+        # Receive game state from the server for the opponent's paddle
+            received_data = client.recv(BUFFER)
+            if not received_data:
+                print("Disconnected from the server.")
+                break
+
+            opponent_game_state = pickle.loads(received_data)
+
+        # Update opponent's paddle position
+            opponentPaddleObj.rect.y = opponent_game_state['player_paddle']
+
         except socket.error as e:
-            print(f"Error sending game state: {e}")
+            print(f"Error sending/receiving game state: {e}")
             break
         # =========================================================================================
 
@@ -172,10 +186,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # catch up (use their info)
         sync += 1
         
-
-        # =========================================================================================
-        # Send your server update here at the end of the game loop to sync your game with your
-        # opponent's game
+# ========================================================================================
+# Send your server update here at the end of the game loop to sync your game with your
+# opponent's game
 
         # =========================================================================================
 
@@ -200,7 +213,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client.connect(("localhost",12321))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
-    setup_info = client.recv(1024)
+    setup_info = client.recv(BUFFER)
     game_setup = pickle.loads(setup_info)
     screenWidth, screenHeight, side = game_setup['screen_width'], game_setup['screen_height'], game_setup['player_side']
 
