@@ -105,7 +105,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             client.send(pickle.dumps(game_state))
 
             # Receive game state from the server for the opponent's paddle
-            received_data = client.recv(BUFFER)
+            received_data = client.recv(BUFFER_SIZE)
             if not received_data:
                 print("Disconnected from the server.")
                 break
@@ -178,7 +178,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
 
         try:
-            serverUpdate = pickle.load(client.recv(BUFFER_SIZE))
+            serverUpdate = pickle.loads(client.recv(BUFFER_SIZE))
             sync = serverUpdate['sync']
             left_paddle = serverUpdate['left_paddle']
             right_paddle = serverUpdate['right_paddle']
@@ -206,7 +206,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # ========================================================================================
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
-        pygame.display.flip()
         clock.tick(60)
         # =========================================================================================
 
@@ -231,7 +230,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client.connect(("localhost",12321))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
-    setup_info = client.recv(BUFFER)
+    setup_info = client.recv(BUFFER_SIZE)
     game_setup = pickle.loads(setup_info)
     screenWidth, screenHeight, side = game_setup['screen_width'], game_setup['screen_height'], game_setup['player_side']
 
