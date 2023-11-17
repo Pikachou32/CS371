@@ -1,8 +1,9 @@
 #=======================================================================================
-# Contributing Authors:	    <Anyone who touched the code>
-# Email Addresses:          <Your uky.edu email addresses>
-# Date:                     <The date the file was last edited>
-# Purpose:                  <How this file contributes to the project>
+# Contributing Authors:	    Clayton Davis, Victor Lopez, Willow Jordan
+# Email Addresses:          cada231@uky.edu, 
+# Date:                     11/17/23
+# Purpose:                  This file implements the server code in order to update
+#                           the game states of each client and communicate over a network.
 # Misc:                     <Not Required.  Anything else you might want to include>
 # =================================================================================================
 
@@ -32,6 +33,11 @@ server_lScore = 0
 server_rScore = 0
 server_killCondition = 0
 
+# Author:        Clayton Davis, Victor Lopez, Willow Jordan
+# Purpose:       This function is meant to handle each client connection, transmitting data from each client in order for the
+#                game states of each client to be synchronized over the network.
+# Pre:           This method expects the clients to each be connected to the server and their threads have been started.
+# Post:          This method changes the global variables that hold the server's current game state in order to synchronize the clients.
 def clientHandler(clientSocket, player, other_client):
     # choosing sides
     if player == 0:
@@ -44,7 +50,7 @@ def clientHandler(clientSocket, player, other_client):
     # global variables to be updated with each client connection
     global server_sync, server_leftPaddle, server_rightPaddle, server_ballX, server_ballY, server_lScore, server_rScore, server_killCondition
 
-    server_currentPaddle = 55
+    server_currentPaddle = 55 #55 is beginning position of the paddles
 
     # sending information to client
     setup_info = {'screen_width': SCREEN_WIDTH, 'screen_height': SCREEN_HEIGHT, 'player_side': side}
@@ -71,12 +77,13 @@ def clientHandler(clientSocket, player, other_client):
                     else:
                         server_rightPaddle = server_currentPaddle
 
+                #Close the server if the game is won
                 if (server_killCondition == 1):
                     client_sockets[0].close()
                     client_sockets[1].close()
                     server.close()
 
-
+                #Update the server state and pass that to the client
                 if not data:
                     print(f"Disconnected from player: {[player]}")
                     break
