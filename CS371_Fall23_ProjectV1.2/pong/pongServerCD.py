@@ -27,18 +27,17 @@ BUFFER_SIZE = 2048
 server_sync = 0
 server_leftPaddle = 0
 server_rightPaddle = 0
-server_ballX = 55
-server_ballY = 55
+server_ballX = 320
+server_ballY = 240
 server_lScore = 0
 server_rScore = 0
-server_killCondition = 0
 
 # Author:        Clayton Davis, Victor Lopez, Willow Jordan
 # Purpose:       This function is meant to handle each client connection, transmitting data from each client in order for the
 #                game states of each client to be synchronized over the network.
 # Pre:           This method expects the clients to each be connected to the server and their threads have been started.
 # Post:          This method changes the global variables that hold the server's current game state in order to synchronize the clients.
-def clientHandler(clientSocket, player, other_client):
+def clientHandler(clientSocket: socket.socket, player: int) -> None:
     # choosing sides
     if player == 0:
         side = "left"
@@ -48,7 +47,7 @@ def clientHandler(clientSocket, player, other_client):
         paddle = "right"
 
     # global variables to be updated with each client connection
-    global server_sync, server_leftPaddle, server_rightPaddle, server_ballX, server_ballY, server_lScore, server_rScore, server_killCondition
+    global server_sync, server_leftPaddle, server_rightPaddle, server_ballX, server_ballY, server_lScore, server_rScore
 
     server_currentPaddle = 55 #55 is beginning position of the paddles
 
@@ -69,7 +68,6 @@ def clientHandler(clientSocket, player, other_client):
                     server_ballY = game_state['ballY']
                     server_lScore = game_state['l_score']
                     server_rScore = game_state['r_score']
-                    server_killCondition = game_state['server_kill']
 
                     # Determine which paddle is the current paddle
                     if (paddle == "left"):
@@ -77,11 +75,6 @@ def clientHandler(clientSocket, player, other_client):
                     else:
                         server_rightPaddle = server_currentPaddle
 
-                #Close the server if the game is won
-                if (server_killCondition == 1):
-                    client_sockets[0].close()
-                    client_sockets[1].close()
-                    server.close()
 
                 #Update the server state and pass that to the client
                 if not data:
@@ -97,13 +90,8 @@ def clientHandler(clientSocket, player, other_client):
                         'ballY': server_ballY,
                         'l_score': server_lScore,
                         'r_score': server_rScore,
-                        'server_kill' : server_killCondition
                     }
 
-                    if (server_killCondition == 1):
-                        client_sockets[0].close()
-                        client_sockets[1].close()
-                        server.close()
 
                     gameUpdate = pickle.dumps(server_state)
                     clientSocket.send(gameUpdate)
@@ -126,13 +114,11 @@ if __name__ == "__main__":
     with lock:
         clientSocket, clientAddress = server.accept()
         print(f"connected to: {clientAddress}")
-        # Store the client socket in the list
-        client_sockets[player] = clientSocket
-        client_thread = threading.Thread(target=clientHandler, args=(clientSocket,player, client_sockets[1- player]) )
+        client_thread = threading.Thread(target=clientHandler, args=(clientSocket,player ))
         player += 1
     with lock:
         clientSocket, clientAddress = server.accept()
         print(f"connected to: {clientAddress}")
-        client_thread2 = threading.Thread(target=clientHandler, args=(clientSocket, player, client_sockets[1 - player]))
+        client_thread2 = threading.Thread(target=clientHandler, args=(clientSocket, player))
         client_thread.start()
         client_thread2.start()
