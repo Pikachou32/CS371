@@ -104,12 +104,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             # Send the game state to the server
             client.send(pickle.dumps(game_state))
 
-            # Receive game state from the server for the opponent's paddle
-            received_data = client.recv(BUFFER_SIZE)
-            if not received_data:
-                print("Disconnected from the server.")
-                break
-
         except socket.error as e:
             print(f"Error sending/receiving game state: {e}")
             break
@@ -280,6 +274,10 @@ def startScreen():
 if __name__ == "__main__":
     startScreen()
 
+    # Uncomment the line below if you want to play the game without a server to see how it should work
+    # the startScreen() function should call playGame with the arguments given to it by the server this is
+    # here for demo purposes only
+    #playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
     # Uncomment the line below if you want to play the game without a server to see how it should work
     # the startScreen() function should call playGame with the arguments given to it by the server this is
     # here for demo purposes only
