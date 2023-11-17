@@ -14,7 +14,7 @@ import threading
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
 lock = threading.Lock()
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 2048
 # Use this file to write your server logic
 # You will need to support at least two clients
 # You will need to keep track of where on the screen (x,y coordinates) each paddle is, the score 
@@ -51,7 +51,6 @@ def clientHandler(clientSocket, player, other_client):
     
     while True:
         try:
-            
             with lock:
                 data = clientSocket.recv(BUFFER_SIZE)
                 game_state = pickle.loads(data)
@@ -88,11 +87,6 @@ def clientHandler(clientSocket, player, other_client):
 
                     gameUpdate = pickle.dumps(server_state)
                     clientSocket.send(gameUpdate)
-
-
-                # Update the other client with the received game state
-                if other_client is not None:
-                    other_client.sendall(pickle.dumps(game_state))
 
         except Exception as e:
             print(f"Error in player {player}: {e}")
