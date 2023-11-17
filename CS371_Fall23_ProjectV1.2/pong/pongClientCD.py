@@ -27,6 +27,8 @@ server_killCondition = 0
 
 def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.socket) -> None:
 
+    global server_killCondition
+
     # Pygame inits
     pygame.mixer.pre_init(44100, -16, 2, 2048)
     pygame.init()
@@ -174,25 +176,22 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         clock.tick(60)
 
 
-        try:
-            serverUpdate = pickle.loads(client.recv(BUFFER_SIZE))
-            sync = serverUpdate['sync']
-            left_paddle = serverUpdate['left_paddle']
-            right_paddle = serverUpdate['right_paddle']
-            if (lScore < serverUpdate['l_score']):
-                lScore = serverUpdate['l_score']
-            elif (rScore < serverUpdate['r_score']):
-                rScore = serverUpdate['r_score']
-            ball.rect.x = serverUpdate['ballX']
-            ball.rect.y = serverUpdate['ballY']
-            if (playerPaddle == "left"):
-                opponentPaddleObj.y = left_paddle
-            elif (playerPaddle == "right"):
-                opponentPaddleObj.y = right_paddle
-            ball.updatePos()
-
-        except KeyError as e:
-            print("Error occurred: ")
+        serverUpdate = pickle.loads(client.recv(BUFFER_SIZE))
+        sync = serverUpdate['sync']
+        left_paddle = serverUpdate['left_paddle']
+        right_paddle = serverUpdate['right_paddle']
+        if (lScore < serverUpdate['l_score']):
+            lScore = serverUpdate['l_score']
+        elif (rScore < serverUpdate['r_score']):
+            rScore = serverUpdate['r_score']
+        ball.rect.x = serverUpdate['ballX']
+        ball.rect.y = serverUpdate['ballY']
+        if (playerPaddle == "left"):
+            opponentPaddleObj.rect.y = right_paddle
+        elif (playerPaddle == "right"):
+            opponentPaddleObj.rect.y = left_paddle
+        ball.updatePos()
+        print(f"Synchronized at sequence {sync}")
 
 
         # This number should be synchronized between you and your opponent.  If your number is larger
