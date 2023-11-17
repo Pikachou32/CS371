@@ -97,8 +97,7 @@ def clientHandler(clientSocket, player, other_client):
 
 if __name__ == "__main__":    
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)          # create server
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)        #allows us to use "Local host"
-    server.bind(("localhost", 12321))
+    server.bind(("0.0.0.0", 12321))
     server.listen(5)  # listen for 5 concurrent connection attempts
 
     print("Awaiting connection...")
