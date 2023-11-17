@@ -11,8 +11,10 @@ import tkinter as tk
 import sys
 import socket
 import pickle
-
+import time
 from assets.code.helperCode import *
+
+BUFFER_SIZE = 2048
 
 # MY METHODS START HERE
 
@@ -21,8 +23,9 @@ from assets.code.helperCode import *
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
 # to suit your needs.
+
 def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.socket) -> None:
-    
+
     # Pygame inits
     pygame.mixer.pre_init(44100, -16, 2, 2048)
     pygame.init()
@@ -88,10 +91,22 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
-        message = (playerPaddleObj, ball, lScore, rScore, sync)
-        msg_bytes = pickle.dumps(message)
-        client.send(msg_bytes)
+        try:
+            game_state = {
+                'sync': sync,
+                'player_paddle': playerPaddleObj.rect.y,
+                'ballPos': [ball.rect.x, ball.rect.y],
+                'ballVelocity': [ball.xVel, ball.yVel],
+                'l_score': lScore,
+                'r_score': rScore
+            }
 
+            # Send the game state to the server
+            client.send(pickle.dumps(game_state))
+
+        except socket.error as e:
+            print(f"Error sending/receiving game state: {e}")
+            break
         # =========================================================================================
 
         # Update the player paddle and opponent paddle's location on the screen
@@ -124,7 +139,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                 rScore += 1
                 pointSound.play()
                 ball.reset(nowGoing="right")
-                
+
             # If the ball hits a paddle
             if ball.rect.colliderect(playerPaddleObj.rect):
                 bounceSound.play()
@@ -132,19 +147,19 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             elif ball.rect.colliderect(opponentPaddleObj.rect):
                 bounceSound.play()
                 ball.hitPaddle(opponentPaddleObj.rect.center[1])
-                
+
             # If the ball hits a wall
             if ball.rect.colliderect(topWall) or ball.rect.colliderect(bottomWall):
                 bounceSound.play()
                 ball.hitWall()
-            
+
             pygame.draw.rect(screen, WHITE, ball)
             # ==== End Ball Logic =================================================================
 
         # Drawing the dotted line in the center
         for i in centerLine:
             pygame.draw.rect(screen, WHITE, i)
-        
+
         # Drawing the player's new location
         for paddle in [playerPaddleObj, opponentPaddleObj]:
             pygame.draw.rect(screen, WHITE, paddle)
@@ -152,23 +167,48 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         pygame.draw.rect(screen, WHITE, topWall)
         pygame.draw.rect(screen, WHITE, bottomWall)
         scoreRect = updateScore(lScore, rScore, screen, WHITE, scoreFont)
-        pygame.display.update([topWall, bottomWall, ball, leftPaddle, rightPaddle, scoreRect, winMessage])
+        pygame.display.update()
         clock.tick(60)
-        
+
+
         # This number should be synchronized between you and your opponent.  If your number is larger
         # then you are ahead of them in time, if theirs is larger, they are ahead of you, and you need to
         # catch up (use their info)
-        sync += 1
-        # =========================================================================================
+        #sync += 1
+        
+        # ========================================================================================
         # Send your server update here at the end of the game loop to sync your game with your
         # opponent's game
-        resp = client.recv(1024)
-        resp_tuple = pickle.loads(resp)
-        opponentPaddleObj = resp_tuple[0]
-        if (sync < resp_tuple[4]): # if client is out of sync
-            ball = resp_tuple[1]
-            lScore = resp_tuple[2]
-            rScore = resp_tuple[3]
+        try:
+            # Receive game state from the server for the opponent's paddle
+            received_data = client.recv(BUFFER_SIZE)
+            if not received_data:
+                print("Disconnected from the server.")
+                break
+
+            serverUpdate = pickle.loads(received_data)
+            sync = serverUpdate['sync']
+            left_paddle = serverUpdate['left_paddle']
+            right_paddle = serverUpdate['right_paddle']
+            if (lScore < serverUpdate['l_score']):
+                lScore = serverUpdate['l_score']
+            if (rScore < serverUpdate['r_score']):
+                rScore = serverUpdate['r_score']
+            ball.rect.x = serverUpdate['ballPos'][0]
+            ball.rect.y = serverUpdate['ballPos'][1]
+            ball.xVel = serverUpdate['ballVelocity'][0]
+            ball.yVel = serverUpdate['ballVelocity'][1]
+            if (playerPaddle == "left"):
+                opponentPaddleObj.y = left_paddle
+            elif (playerPaddle == "right"):
+                opponentPaddleObj.y = right_paddle
+            ball.updatePos()
+
+        except socket.error as e:
+            print(f"Error sending/receiving game state: {e}")
+            break
+
+        sync += 1
         # =========================================================================================
 
 
@@ -185,21 +225,23 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # port          A string holding the port the server is using
     # errorLabel    A tk label widget, modify it's text to display messages to the user (example below)
     # app           The tk window object, needed to kill the window
-    
+
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(("localhost",12321))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
-    resp = client.recv(1024)
-    screenWidth, screenHeight, side = pickle.loads(resp)
-    
+    setup_info = client.recv(BUFFER_SIZE)
+    game_setup = pickle.loads(setup_info)
+    screenWidth, screenHeight, side = game_setup['screen_width'], game_setup['screen_height'], game_setup['player_side']
+
+
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
     # You may or may not need to call this, depending on how many times you update the label
-    errorLabel.update()     
+    errorLabel.update()
 
     # Close this window and start the game with the info passed to you from the server
     app.withdraw()     # Hides the window (we'll kill it later)
@@ -217,38 +259,30 @@ def startScreen():
     titleLabel = tk.Label(image=image)
     titleLabel.grid(column=0, row=0, columnspan=2)
 
-    initLabel = tk.Label(text="Initials:")
-    initLabel.grid(column=0, row=1, sticky="W", padx=8)
-
-    initEntry = tk.Entry(app)
-    initEntry.grid(column=1, row=1)
-
     ipLabel = tk.Label(text="Server IP:")
-    ipLabel.grid(column=0, row=2, sticky="W", padx=8)
+    ipLabel.grid(column=0, row=1, sticky="W", padx=8)
 
     ipEntry = tk.Entry(app)
-    ipEntry.grid(column=1, row=2)
+    ipEntry.grid(column=1, row=1)
 
     portLabel = tk.Label(text="Server Port:")
-    portLabel.grid(column=0, row=3, sticky="W", padx=8)
+    portLabel.grid(column=0, row=2, sticky="W", padx=8)
 
     portEntry = tk.Entry(app)
-    portEntry.grid(column=1, row=3)
+    portEntry.grid(column=1, row=2)
 
     errorLabel = tk.Label(text="")
-    errorLabel.grid(column=0, row=5, columnspan=2)
+    errorLabel.grid(column=0, row=4, columnspan=2)
 
     joinButton = tk.Button(text="Join", command=lambda: joinServer(ipEntry.get(), portEntry.get(), errorLabel, app))
-    joinButton.grid(column=0, row=4, columnspan=2)
+    joinButton.grid(column=0, row=3, columnspan=2)
 
     app.mainloop()
 
 if __name__ == "__main__":
     startScreen()
-    
+
     # Uncomment the line below if you want to play the game without a server to see how it should work
     # the startScreen() function should call playGame with the arguments given to it by the server this is
     # here for demo purposes only
     #playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
-
-    

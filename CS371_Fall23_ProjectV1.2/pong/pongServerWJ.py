@@ -1,4 +1,4 @@
-# =================================================================================================
+#=======================================================================================
 # Contributing Authors:	    <Anyone who touched the code>
 # Email Addresses:          <Your uky.edu email addresses>
 # Date:                     <The date the file was last edited>
@@ -7,9 +7,14 @@
 # =================================================================================================
 
 import socket
+import pickle
 import threading
-import pickle 
 
+#define these ahead of time?
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
+lock = threading.Lock()
+BUFFER_SIZE = 2048
 # Use this file to write your server logic
 # You will need to support at least two clients
 # You will need to keep track of where on the screen (x,y coordinates) each paddle is, the score 
@@ -17,71 +22,98 @@ import pickle
 # I suggest you use the sync variable in pongClient.py to determine how out of sync your two
 # clients are and take actions to resync the games
 
-#global variables
-SCREEN_WIDTH = 640
-SCREEN_HEIGHT = 480
-messages = [0, 0]
+# Declare the default server state
+server_sync = 0
+server_leftPaddle = 0
+server_rightPaddle = 0
+server_ballX = 55
+server_ballY = 55
+server_lScore = 0
+server_rScore = 0
 
-# receive data from the given client
-def receiveData(clientSocket, clientNum): 
-    messages[clientNum-1] = pickle.loads(clientSocket.recv(1024)) #clientNum-1 because arrays are 0-indexed
+def clientHandler(clientSocket, player, other_client):
+    # choosing sides
+    if player == 0:
+        side = "left"
+        paddle = "left"
+    else:
+        side = "right"
+        paddle = "right"
 
-#send data to the given client
-def sendData(clientSocket, data):
-    data_bytes = pickle.dumps(data)
-    clientSocket.send(data_bytes)
+    # global variables to be updated with each client connection
+    global server_sync, server_leftPaddle, server_rightPaddle, server_ballX, server_ballY, server_lScore, server_rScore
 
-if __name__ == "__main__":
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #create server
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(("localhost", 12321))
-    server.listen(5) #listen for 5 concurrent connection attempts
+    server_currentPaddle = 55
 
-    #accept two connections
-    print("Waiting for connection . . .")
-    clientOneSocket, clientOneAddress = server.accept()
-    print(f"received connection from {clientOneAddress}")
-
-    print("Waiting for connection . . .")
-    clientTwoSocket, clientTwoAddress = server.accept()
-    print(f"received connection from {clientTwoAddress}")
-
-    #assign sides, determine screen size
-    msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "left")
-    msg_bytes = pickle.dumps(msg)
-    clientOneSocket.send(msg_bytes)
-
-    msg = (SCREEN_WIDTH, SCREEN_HEIGHT, "right")
-    msg_bytes = pickle.dumps(msg)
-    clientTwoSocket.send(msg_bytes)
-
-    spectatorSockets = []
+    # sending information to client
+    setup_info = {'screen_width': SCREEN_WIDTH, 'screen_height': SCREEN_HEIGHT, 'player_side': side}
+    clientSocket.sendall(pickle.dumps(setup_info))
     
-    while (True): #repeat until connection is broken
-        #listen for spectator connections
-        server.listen(5)
-        
+    while True:
+        try:
+            with lock:
+                data = clientSocket.recv(BUFFER_SIZE)
+                game_state = pickle.loads(data)
 
-        #receive data first
-        thread1 = threading.Thread(target=receiveData, args=(clientOneSocket, 1,))
-        thread2 = threading.Thread(target=receiveData, args=(clientTwoSocket, 2,))
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
+                if (game_state['sync'] > server_sync):
+                    server_sync = game_state['sync']
+                    server_currentPaddle = game_state['player_paddle']
+                    server_ballPos = game_state['ballPos']
+                    server_ballVelocity = game_state['ballVelocity']
+                    server_lScore = game_state['l_score']
+                    server_rScore = game_state['r_score']
 
-        #then send data
-        thread1 = threading.Thread(target=sendData, args=(clientOneSocket, messages[1],))
-        thread2 = threading.Thread(target=sendData, args=(clientTwoSocket, messages[0],))
-        thread1.start()
-        thread2.start()
-        thread1.join()
-        thread2.join()
+                    # Determine which paddle is the current paddle
+                    if (paddle == "left"):
+                        server_leftPaddle = server_currentPaddle
+                    else:
+                        server_rightPaddle = server_currentPaddle
 
-        #check if the game is over
-        #if so, end connections and break out of the loop
-        if (messages[0][2] > 4 or messages[0][3] > 4):
-            clientOneSocket.close()
-            clientTwoSocket.close()
-            server.close()
+
+                if not data:
+                    print(f"Disconnected from player: {[player]}")
+                    break
+                else:
+                    print(f"received from player {player}: {game_state}")
+                    server_state = {
+                        'sync': server_sync,
+                        'left_paddle': server_leftPaddle,
+                        'right_paddle': server_rightPaddle,
+                        'ballPos': server_ballPos,
+                        'ballVelocity': server_ballVelocity,
+                        'l_score': server_lScore,
+                        'r_score': server_rScore
+                    }
+
+                    gameUpdate = pickle.dumps(server_state)
+                    clientSocket.send(gameUpdate)
+
+        except Exception as e:
+            print(f"Error in player {player}: {e}")
             break
+
+            
+
+
+if __name__ == "__main__":    
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)          # create server
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)        #allows us to use "Local host"
+    server.bind(("localhost", 12321))
+    server.listen(5)  # listen for 5 concurrent connection attempts
+
+    print("Awaiting connection...")
+    player = 0
+    client_sockets = [None, None]
+    with lock:
+        clientSocket, clientAddress = server.accept()
+        print(f"connected to: {clientAddress}")
+        # Store the client socket in the list
+        client_sockets[player] = clientSocket
+        client_thread = threading.Thread(target=clientHandler, args=(clientSocket,player, client_sockets[1- player]) )
+        player += 1
+    with lock:
+        clientSocket, clientAddress = server.accept()
+        print(f"connected to: {clientAddress}")
+        client_thread2 = threading.Thread(target=clientHandler, args=(clientSocket, player, client_sockets[1 - player]))
+        client_thread.start()
+        client_thread2.start()
