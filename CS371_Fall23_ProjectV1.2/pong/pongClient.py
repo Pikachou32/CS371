@@ -168,6 +168,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         scoreRect = updateScore(lScore, rScore, screen, WHITE, scoreFont)
         pygame.display.update()
         clock.tick(60)
+        # ========================================================================================
+        # Send your server update here at the end of the game loop to sync your game with your
+        # opponent's game
 
         #Receive the new game state from the server, update the client-side game state to reflect the new changes
         serverUpdate = pickle.loads(client.recv(BUFFER_SIZE))
@@ -193,10 +196,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # catch up (use their info)
         sync += 1
         
-        # ========================================================================================
-        # Send your server update here at the end of the game loop to sync your game with your
-        # opponent's game
-        clock.tick(60)
+
         # =========================================================================================
 
 

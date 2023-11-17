@@ -106,6 +106,9 @@ def clientHandler(clientSocket: socket.socket, player: int) -> None:
 if __name__ == "__main__":    
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)          # create server
     server.bind(("10.47.242.102", 12321))
+    print()    # just so it wont be cramped when displaing on server
+    print("Server is bound to {}".format(*server.getsockname())) # allows us to see server its connected to 
+
     server.listen(5)  # listen for 5 concurrent connection attempts
 
     print("Awaiting connection...")
