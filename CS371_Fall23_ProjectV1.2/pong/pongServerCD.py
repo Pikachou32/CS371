@@ -1,6 +1,6 @@
 #=======================================================================================
 # Contributing Authors:	    Clayton Davis, Victor Lopez, Willow Jordan
-# Email Addresses:          cada231@uky.edu, 
+# Email Addresses:          cada231@uky.edu, vhav222@uky.edu
 # Date:                     11/17/23
 # Purpose:                  This file implements the server code in order to update
 #                           the game states of each client and communicate over a network.
