@@ -104,12 +104,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             # Send the game state to the server
             client.send(pickle.dumps(game_state))
 
-            # Receive game state from the server for the opponent's paddle
-            received_data = client.recv(BUFFER_SIZE)
-            if not received_data:
-                print("Disconnected from the server.")
-                break
-
         except socket.error as e:
             print(f"Error sending/receiving game state: {e}")
             break
@@ -227,7 +221,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(("localhost",12321))
+    client.connect(("0.0.0.0", 12321))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
     setup_info = client.recv(BUFFER_SIZE)
