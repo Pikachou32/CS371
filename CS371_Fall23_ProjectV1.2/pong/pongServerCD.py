@@ -42,7 +42,7 @@ def clientHandler(clientSocket, player, other_client):
         paddle = "right"
 
     # global variables to be updated with each client connection
-    global server_sync, server_leftPaddle, server_rightPaddle, server_ballX, server_ballY, server_lScore, server_rScore
+    global server_sync, server_leftPaddle, server_rightPaddle, server_ballX, server_ballY, server_lScore, server_rScore, server_killCondition
 
     server_currentPaddle = 55
 
@@ -52,7 +52,7 @@ def clientHandler(clientSocket, player, other_client):
     
     while True:
         try:
-            with lock:
+            #ith lock:
                 data = clientSocket.recv(BUFFER_SIZE)
                 game_state = pickle.loads(data)
 
@@ -72,8 +72,6 @@ def clientHandler(clientSocket, player, other_client):
                         server_rightPaddle = server_currentPaddle
 
                 if (server_killCondition == 1):
-                    client_thread.join()
-                    client_thread2.join()
                     client_sockets[0].close()
                     client_sockets[1].close()
                     server.close()
@@ -96,8 +94,6 @@ def clientHandler(clientSocket, player, other_client):
                     }
 
                     if (server_killCondition == 1):
-                        client_thread.join()
-                        client_thread2.join()
                         client_sockets[0].close()
                         client_sockets[1].close()
                         server.close()
