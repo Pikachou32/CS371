@@ -1,8 +1,8 @@
 # =================================================================================================
-# Contributing Authors:	    <Anyone who touched the code>
-# Email Addresses:          <Your uky.edu email addresses>
-# Date:                     <The date the file was last edited>
-# Purpose:                  <How this file contributes to the project>
+# Contributing Authors:	    Clayton Davis, Victor Lopez, Willow Jordan
+# Email Addresses:          cada231@uky.edu, 
+# Date:                     11/17/23
+# Purpose:                  This file implements the game for each client in order to run the game of Pong.
 # Misc:                     <Not Required.  Anything else you might want to include>
 # =================================================================================================
 
@@ -175,7 +175,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         pygame.display.update()
         clock.tick(60)
 
-
+        #Receive the new game state from the server, update the client-side game state to reflect the new changes
         serverUpdate = pickle.loads(client.recv(BUFFER_SIZE))
         sync = serverUpdate['sync']
         left_paddle = serverUpdate['left_paddle']
