@@ -105,7 +105,11 @@ def clientHandler(clientSocket: socket.socket, player: int) -> None:
 
 if __name__ == "__main__":    
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)          # create server
-    server.bind(("10.47.242.102", 12321))
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)        #allows us to use "Local host"
+    server.bind(("localhost", 12321))
+    IP = ("localhost")
+    print() # a empty line so it isnt all cramped when displaying 
+    print("Server is bound to {}".format(*server.getsockname())) # allows us to see server its connected to 
     server.listen(5)  # listen for 5 concurrent connection attempts
 
     print("Awaiting connection...")

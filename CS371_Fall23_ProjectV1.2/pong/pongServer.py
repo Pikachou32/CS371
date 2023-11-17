@@ -13,7 +13,8 @@ import threading
 #define these ahead of time?
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
-lock = threading.Lock()
+messages = [0, 0]
+
 # Use this file to write your server logic
 # You will need to support at least two clients
 # You will need to keep track of where on the screen (x,y coordinates) each paddle is, the score 
@@ -22,20 +23,17 @@ lock = threading.Lock()
 # clients are and take actions to resync the games
 
 
-
-
-def clientHandler(clientSocket, player, other_client):
-    # choosing sides
+def clientHandler(clientSocket, player, other_client ):
+    #choosing sides
     if player == 0:
         side = "left"
     else:
         side = "right"
-
-
-    # sending information to client
+    #sending informationt to client
+    sync_player = [0, 0]
     setup_info = {'screen_width': SCREEN_WIDTH, 'screen_height': SCREEN_HEIGHT, 'player_side': side}
     clientSocket.sendall(pickle.dumps(setup_info))
-    
+    data = " "
     while True:
         try:
             data = clientSocket.recv(1024)
@@ -43,45 +41,48 @@ def clientHandler(clientSocket, player, other_client):
 
             if not data:
                 print(f"Disconnected from player: {[player]}")
-                break
+                break          
             else:
-                print(f"received from player {player}: {game_state}")
-                paddle_pos = {'player_paddle': game_state[1]}
-                other_client.sendall(pickle.dumps(paddle_pos))
+                print(f"received from player: {player}: ", game_state)
+                print(f"sending from player : {player}: ", game_state)
+        
 
 
-            # Update the other client with the received game state
             if other_client is not None:
                 other_client.sendall(pickle.dumps(game_state))
-
+            clientSocket.sendall(pickle.dumps(game_state))
+        
         except Exception as e:
             print(f"Error in player {player}: {e}")
             break
-
-            
 
 
 if __name__ == "__main__":    
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)          # create server
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)        #allows us to use "Local host"
     server.bind(("localhost", 12321))
+    IP = ("localhost")
+    print()
+    print("Server is bound to {}".format(*server.getsockname())) # allows us to see server its connected to 
     server.listen(5)  # listen for 5 concurrent connection attempts
 
     print("Awaiting connection...")
     player = 0
     client_sockets = [None, None]
-    with lock:
-        clientSocket, clientAddress = server.accept()
-        print(f"connected to: {clientAddress}")
+
+    clientSocket, clientAddress = server.accept()
+    print(f"connected to: {clientAddress}")
     # Store the client socket in the list
-        client_sockets[player] = clientSocket
-        client_thread = threading.Thread(target=clientHandler, args=(clientSocket,player, client_sockets[1- player]) )
-        player += 1
-    with lock:
-        clientSocket, clientAddress = server.accept()
-        print(f"connected to: {clientAddress}")
-        client_thread2 = threading.Thread(target=clientHandler, args=(clientSocket, player, client_sockets[1 - player]))
-        client_thread.start()
-        client_thread2.start()
+    client_sockets[player] = clientSocket
+    
+    
+    client_thread = threading.Thread(target=clientHandler, args=(clientSocket,player, client_sockets[1- player]) )
+    player += 1
+    
+    clientSocket, clientAddress = server.accept()
+    print(f"connected to: {clientAddress}")
+    client_thread2 = threading.Thread(target=clientHandler, args=(clientSocket, player, client_sockets[1 - player]))
+    client_thread.start()
+    client_thread2.start()
 
 
