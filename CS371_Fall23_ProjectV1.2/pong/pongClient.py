@@ -14,7 +14,8 @@ import pickle
 import time
 from assets.code.helperCode import *
 
-BUFFER = 2048
+BUFFER_SIZE = 2048
+server_killCondition = 0
 
 # MY METHODS START HERE
 
@@ -25,7 +26,7 @@ BUFFER = 2048
 # to suit your needs.
 
 def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.socket) -> None:
-
+    global server_killCondition
     # Pygame inits
     pygame.mixer.pre_init(44100, -16, 2, 2048)
     pygame.init()
@@ -95,24 +96,15 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             game_state = {
                 'sync': sync,
                 'player_paddle': playerPaddleObj.rect.y,
-                'ball': (ball.rect.x, ball.rect.y),
+                'ballX': ball.rect.x,
+                'ballY': ball.rect.y,
                 'l_score': lScore,
-                'r_score': rScore
+                'r_score': rScore,
+                'server_kill': server_killCondition
             }
 
-        # Send the game state to the server
-            client.sendall(pickle.dumps(game_state))
-
-        # Receive game state from the server for the opponent's paddle
-            received_data = client.recv(BUFFER)
-            if not received_data:
-                print("Disconnected from the server.")
-                break
-
-            opponent_game_state = pickle.loads(received_data)
-
-        # Update opponent's paddle position
-            opponentPaddleObj.rect.y = opponent_game_state['player_paddle']
+            # Send the game state to the server
+            client.send(pickle.dumps(game_state))
 
         except socket.error as e:
             print(f"Error sending/receiving game state: {e}")
@@ -135,6 +127,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             textRect = textSurface.get_rect()
             textRect.center = ((screenWidth/2), screenHeight/2)
             winMessage = screen.blit(textSurface, textRect)
+            server_killCondition = 1
         else:
 
             # ==== Ball Logic =====================================================================
@@ -177,19 +170,37 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         pygame.draw.rect(screen, WHITE, topWall)
         pygame.draw.rect(screen, WHITE, bottomWall)
         scoreRect = updateScore(lScore, rScore, screen, WHITE, scoreFont)
-        #pygame.display.update([topWall, bottomWall, ball, leftPaddle, rightPaddle, scoreRect, winMessage])
         pygame.display.update()
         clock.tick(60)
+
+        serverUpdate = pickle.loads(client.recv(BUFFER_SIZE))
+        sync = serverUpdate['sync']
+        left_paddle = serverUpdate['left_paddle']
+        right_paddle = serverUpdate['right_paddle']
+        if (lScore < serverUpdate['l_score']):
+            lScore = serverUpdate['l_score']
+        elif (rScore < serverUpdate['r_score']):
+            rScore = serverUpdate['r_score']
+        ball.rect.x = serverUpdate['ballX']
+        ball.rect.y = serverUpdate['ballY']
+        if (playerPaddle == "left"):
+            opponentPaddleObj.y = left_paddle
+        elif (playerPaddle == "right"):
+            opponentPaddleObj.y = right_paddle
+        ball.updatePos()
+        print(f"Synchronized at sequence {sync}")
+
+
 
         # This number should be synchronized between you and your opponent.  If your number is larger
         # then you are ahead of them in time, if theirs is larger, they are ahead of you, and you need to
         # catch up (use their info)
         sync += 1
         
-# ========================================================================================
-# Send your server update here at the end of the game loop to sync your game with your
-# opponent's game
-
+        # ========================================================================================
+        # Send your server update here at the end of the game loop to sync your game with your
+        # opponent's game
+        clock.tick(60)
         # =========================================================================================
 
 
@@ -210,10 +221,10 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(("localhost",12321))
+    client.connect(("10.47.242.102", 12321))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
-    setup_info = client.recv(BUFFER)
+    setup_info = client.recv(BUFFER_SIZE)
     game_setup = pickle.loads(setup_info)
     screenWidth, screenHeight, side = game_setup['screen_width'], game_setup['screen_height'], game_setup['player_side']
 
@@ -267,4 +278,3 @@ if __name__ == "__main__":
     # the startScreen() function should call playGame with the arguments given to it by the server this is
     # here for demo purposes only
     #playGame(640, 480,"left",socket.socket(socket.AF_INET, socket.SOCK_STREAM))
-
