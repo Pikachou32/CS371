@@ -79,7 +79,7 @@ def clientHandler(clientSocket: socket.socket, player: int) -> None:
                     print(f"Disconnected from player: {[player]}")
                     break
                 else:
-                    print(f"received from player {player}: {game_state}")
+                    #print(f"received from player {player}: {game_state}")
                     server_state = {
                         'sync': server_sync,
                         'left_paddle': server_leftPaddle,
