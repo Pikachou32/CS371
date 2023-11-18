@@ -188,7 +188,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         elif (playerPaddle == "right"):
             opponentPaddleObj.rect.y = left_paddle
         ball.updatePos()
-        print(f"Synchronized at sequence {sync}")
 
 
         # This number should be synchronized between you and your opponent.  If your number is larger
@@ -217,7 +216,7 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(ip, int(port))
+    client.connect((ip, int(port)))
 
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
     setup_info = client.recv(BUFFER_SIZE)

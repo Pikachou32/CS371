@@ -11,7 +11,6 @@ import socket
 import pickle
 import threading
 
-#define these ahead of time?
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
 lock = threading.Lock()
@@ -49,7 +48,7 @@ def clientHandler(clientSocket: socket.socket, player: int) -> None:
     # global variables to be updated with each client connection
     global server_sync, server_leftPaddle, server_rightPaddle, server_ballX, server_ballY, server_lScore, server_rScore
 
-    server_currentPaddle = 55 #55 is beginning position of the paddles
+    server_currentPaddle = 200 #200 is beginning position of the paddles
 
     # sending information to client
     setup_info = {'screen_width': SCREEN_WIDTH, 'screen_height': SCREEN_HEIGHT, 'player_side': side}
@@ -57,7 +56,6 @@ def clientHandler(clientSocket: socket.socket, player: int) -> None:
     
     while True:
         try:
-            #ith lock:
                 data = clientSocket.recv(BUFFER_SIZE)
                 game_state = pickle.loads(data)
 
@@ -91,8 +89,6 @@ def clientHandler(clientSocket: socket.socket, player: int) -> None:
                         'l_score': server_lScore,
                         'r_score': server_rScore,
                     }
-
-
                     gameUpdate = pickle.dumps(server_state)
                     clientSocket.send(gameUpdate)
 
@@ -105,15 +101,14 @@ def clientHandler(clientSocket: socket.socket, player: int) -> None:
 
 if __name__ == "__main__":    
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)          # create server
-    server.bind(("10.47.242.102", 12321))
-    print()    # just so it wont be cramped when displaing on server
-    print("Server is bound to {}".format(*server.getsockname())) # allows us to see server its connected to 
-
+    server.bind(("172.20.10.2", 12321))
+    print()
+    print("Server is bound to ip: {} and port: {}".format(*server.getsockname()))
     server.listen(5)  # listen for 5 concurrent connection attempts
 
     print("Awaiting connection...")
     player = 0
-    client_sockets = [None, None]
+    client_sockets = [None]
     with lock:
         clientSocket, clientAddress = server.accept()
         print(f"connected to: {clientAddress}")
